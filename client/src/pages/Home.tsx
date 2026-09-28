@@ -45,6 +45,47 @@ import { toast } from "sonner";
 
 const HERO_IMAGE = "/media/hero-pavilion.webp";
 
+// As quatro imagens que sustentam a pagina. Nenhuma leva texto ou painel
+// sobreposto: a legenda vive sempre abaixo da imagem.
+const PRINCIPAL_IMAGES = [
+  {
+    src: "/media/hero-pavilion.webp",
+    alt: "Pavilhao de madeira laminado curvado, construido e aberto ao publico",
+    index: "01",
+    title: "Pavilhao construido",
+    caption:
+      "Estrutura em madeira laminada de curvacelas entrelacadas, com nucleo central e base circular.",
+    wide: true,
+  },
+  {
+    src: "/media/curation-reference.jpg",
+    alt: "Utilizadores sentados no banco de madeira sob o pavilhao",
+    index: "02",
+    title: "Uso e escala humana",
+    caption:
+      "O pavilhao como lugar de estar. A altura do banco e a vao livre sao decididas pelo uso.",
+    wide: false,
+  },
+  {
+    src: "/media/anatomy-detail.png",
+    alt: "Vista do nucleo estrutural do pavilhao, com nervuras convergindo na base",
+    index: "03",
+    title: "Nucleo estrutural",
+    caption:
+      "As costelas convergem num nucleo central sobre base circular. O desenho e a estrutura sao o mesmo elemento.",
+    wide: false,
+  },
+  {
+    src: "/media/project-reference.jpg",
+    alt: "Prancha tecnica do pavilhao: estrutura, perspectiva do nucleo e vista geral com cotas",
+    index: "04",
+    title: "Prancha tecnica",
+    caption:
+      "Estrutura, perspectiva do nucleo e vista geral com cotas, detalhes de material e componentes.",
+    wide: true,
+  },
+] as const;
+
 const stages = [
   {
     id: "curation",
@@ -509,19 +550,16 @@ export default function Home() {
       <main>
         <section
           id="top"
-          className="relative isolate min-h-[700px] overflow-hidden bg-[#1a1916] text-[#f2efe6] sm:min-h-[780px]"
-          style={{ backgroundImage: `linear-gradient(90deg, rgba(26,25,22,0.98) 0%, rgba(26,25,22,0.88) 32%, rgba(26,25,22,0.2) 70%, rgba(26,25,22,0.4) 100%), url(${HERO_IMAGE})` }}
+          className="relative isolate bg-[#1a1916] text-[#f2efe6]"
         >
-          <div className="hero-glow absolute -left-32 top-28 h-96 w-96 rounded-full bg-[#e96b3b]/20 blur-3xl" />
-          <div className="blueprint-grid absolute inset-0 opacity-20" />
-          <div className="hero-grid-flow pointer-events-none absolute inset-[-18%]" aria-hidden="true" />
-          <div className="hero-beam hero-beam-one pointer-events-none" aria-hidden="true" />
-          <div className="hero-beam hero-beam-two pointer-events-none" aria-hidden="true" />
-          <div className="hero-radar pointer-events-none absolute right-[11%] top-[31%] hidden h-56 w-56 rounded-full lg:block" aria-hidden="true"><span /><i /><b /></div>
-          <div className="hero-particle hero-particle-one pointer-events-none" aria-hidden="true" />
-          <div className="hero-particle hero-particle-two pointer-events-none" aria-hidden="true" />
-          <div className="hero-particle hero-particle-three pointer-events-none" aria-hidden="true" />
-          <div className="relative mx-auto flex min-h-[700px] max-w-[1400px] flex-col justify-end px-4 pb-14 pt-40 sm:min-h-[780px] sm:px-8 sm:pb-20 lg:px-12">
+          <figure className="relative w-full overflow-hidden bg-[#1a1916]">
+            <img
+              src={HERO_IMAGE}
+              alt="Pavilhao de madeira laminado curvado, construido e aberto ao publico"
+              className="block h-[62vh] min-h-[400px] w-full object-cover"
+            />
+          </figure>
+          <div className="relative mx-auto flex max-w-[1400px] flex-col justify-end px-4 pb-14 pt-12 sm:px-8 sm:pb-20 lg:px-12">
             <div className="max-w-4xl">
               <div className="mb-7 flex items-center gap-3 font-mono text-[10px] uppercase tracking-[0.2em] text-[#b6c9bb] sm:text-[11px]">
                 <span className="h-px w-8 bg-[#e96b3b]" />
@@ -552,10 +590,10 @@ export default function Home() {
               <div><p className="stat-value text-[#e96b3b]">∞</p><p className="stat-label">variantes tuas</p></div>
             </div>
 
-            <div className="absolute bottom-8 right-4 hidden max-w-[170px] text-right font-mono text-[9px] uppercase leading-relaxed tracking-[0.15em] text-[#f2efe6]/45 lg:block lg:right-12">
+            <p className="mt-8 max-w-[190px] font-mono text-[9px] uppercase leading-relaxed tracking-[0.15em] text-[#f2efe6]/45">
               <span className="mb-2 block text-[#e96b3b]">/ 38.7223° N</span>
               pensar é desenhar uma<br /> hipótese de futuro.
-            </div>
+            </p>
           </div>
         </section>
 
@@ -564,6 +602,57 @@ export default function Home() {
             <span>da curadoria ao clipe final</span><span>✳</span><span>human-in-the-loop</span><span>✳</span><span>estrutura waffle em bétula</span><span>✳</span><span>da curadoria ao clipe final</span><span>✳</span><span>human-in-the-loop</span><span>✳</span><span>estrutura waffle em bétula</span><span>✳</span><span>da curadoria ao clipe final</span><span>✳</span><span>human-in-the-loop</span><span>✳</span><span>estrutura waffle em bétula</span><span>✳</span>
           </div>
         </div>
+
+        <section id="galeria" className="scroll-mt-10 bg-[#171715] px-4 py-20 sm:px-8 sm:py-24 lg:px-12">
+          <div className="mx-auto max-w-[1400px]">
+            <div className="mb-12 flex flex-col gap-4 sm:mb-16 sm:flex-row sm:items-end sm:justify-between">
+              <h2 className="font-display max-w-2xl text-[clamp(2.4rem,6vw,4.6rem)] font-black uppercase leading-[0.86] tracking-[-0.06em] text-[#f2efe6]">
+                o pavilhão,
+                <br />
+                <span className="text-[#e96b3b]">a prova</span>
+              </h2>
+              <p className="max-w-sm text-sm leading-relaxed text-[#f2efe6]/60">
+                Quatro imagens definem o trabalho: o pavilhão construído, o seu uso, o
+                núcleo estrutural e a prancha técnica que o coordena.
+              </p>
+            </div>
+
+            <div className="grid gap-8 sm:gap-10 lg:grid-cols-2 lg:gap-12">
+              {PRINCIPAL_IMAGES.map((image) => (
+                <figure
+                  key={image.src}
+                  className={`flex flex-col ${
+                    image.wide ? "lg:col-span-2" : ""
+                  }`}
+                >
+                  <img
+                    src={image.src}
+                    alt={image.alt}
+                    loading="lazy"
+                    className={`w-full bg-[#0e0e0c] ${
+                      image.wide
+                        ? "max-h-[78vh] object-cover"
+                        : "aspect-[4/3] object-cover"
+                    }`}
+                  />
+                  <figcaption className="mt-4 flex gap-4 border-t border-[#f2efe6]/20 pt-4">
+                    <span className="font-mono text-[10px] tracking-[0.14em] text-[#e96b3b]">
+                      {image.index}
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block font-display text-xl font-bold uppercase tracking-[-0.03em] text-[#f2efe6]">
+                        {image.title}
+                      </span>
+                      <span className="mt-2 block max-w-2xl text-sm leading-relaxed text-[#f2efe6]/60">
+                        {image.caption}
+                      </span>
+                    </span>
+                  </figcaption>
+                </figure>
+              ))}
+            </div>
+          </div>
+        </section>
 
         <section id="processo" className="scroll-mt-10 bg-[#f2efe6] px-4 py-24 sm:px-8 sm:py-32 lg:px-12">
           <div className="mx-auto max-w-[1400px]">
@@ -624,25 +713,24 @@ export default function Home() {
                         <span>saída / {activeStage.output}</span>
                       </div>
                     </div>
-                    <figure className="relative aspect-square overflow-hidden border border-[#f2efe6]/20 bg-[#f2efe6]/[0.03]">
-                      {activeStage.proof ? (
-                        <>
+                    <figure className="flex flex-col">
+                      <div className="relative aspect-square overflow-hidden border border-[#f2efe6]/20 bg-[#f2efe6]/[0.03]">
+                        {activeStage.proof ? (
                           <img key={activeStage.id} src={activeStage.proof} alt={`${activeStage.eyebrow} — evidência do processo`} className="carousel-image h-full w-full object-cover" />
-                          <div className="absolute inset-0 bg-gradient-to-t from-[#171715] via-transparent to-transparent" />
-                          <figcaption className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-3 border-t px-3 py-2 font-mono text-[8px] uppercase tracking-[0.12em] backdrop-blur-sm" style={{ borderColor: `${activeStage.color}55`, background: "rgba(23, 23, 21, 0.72)", color: activeStage.color }}>
-                            <span>evidência / {activeStage.number}</span>
-                            <span className="text-[#f2efe6]/55">{activeStage.detail}</span>
-                          </figcaption>
-                        </>
-                      ) : (
-                        <>
-                          <div className="absolute inset-5 border border-dashed" style={{ borderColor: `${activeStage.color}70` }} />
-                          <div className="absolute left-1/2 top-1/2 h-24 w-24 -translate-x-1/2 -translate-y-1/2 rotate-45 border" style={{ borderColor: activeStage.color, boxShadow: `0 0 40px ${activeStage.color}30` }} />
-                          <div className="absolute left-1/2 top-1/2 h-10 w-10 -translate-x-1/2 -translate-y-1/2 border bg-[#171715]" style={{ borderColor: activeStage.color }} />
-                          <span className="absolute bottom-3 left-3 font-mono text-[8px] uppercase tracking-[0.12em] text-[#f2efe6]/45">{activeStage.detail}</span>
-                          <span className="absolute right-3 top-3 font-mono text-[8px] uppercase tracking-[0.12em]" style={{ color: activeStage.color }}>x / y / z</span>
-                        </>
-                      )}
+                        ) : (
+                          <>
+                            <div className="absolute inset-5 border border-dashed" style={{ borderColor: `${activeStage.color}70` }} />
+                            <div className="absolute left-1/2 top-1/2 h-24 w-24 -translate-x-1/2 -translate-y-1/2 rotate-45 border" style={{ borderColor: activeStage.color, boxShadow: `0 0 40px ${activeStage.color}30` }} />
+                            <div className="absolute left-1/2 top-1/2 h-10 w-10 -translate-x-1/2 -translate-y-1/2 border bg-[#171715]" style={{ borderColor: activeStage.color }} />
+                            <span className="absolute bottom-3 left-3 font-mono text-[8px] uppercase tracking-[0.12em] text-[#f2efe6]/45">{activeStage.detail}</span>
+                            <span className="absolute right-3 top-3 font-mono text-[8px] uppercase tracking-[0.12em]" style={{ color: activeStage.color }}>x / y / z</span>
+                          </>
+                        )}
+                      </div>
+                      <figcaption className="mt-3 flex items-center justify-between gap-3 border-t border-[#f2efe6]/20 pt-2.5 font-mono text-[8px] uppercase tracking-[0.12em]">
+                        <span style={{ color: activeStage.color }}>evidência / {activeStage.number}</span>
+                        <span className="text-[#f2efe6]/55">{activeStage.detail}</span>
+                      </figcaption>
                     </figure>
                   </div>
                 </div>
@@ -758,7 +846,8 @@ export default function Home() {
 
             <div className="mt-6" onMouseEnter={() => setCarouselPaused(true)} onMouseLeave={() => setCarouselPaused(false)}>
               <div className="grid overflow-hidden border border-[#171715]/20 bg-[#171715] lg:grid-cols-[1.35fr_0.65fr]">
-                <div className="relative min-h-[470px] overflow-hidden sm:min-h-[560px]">
+                <div className="flex flex-col">
+                  <div className="relative min-h-[470px] overflow-hidden sm:min-h-[560px]">
                   {activeMediaItem.kind === "motion" ? (
                     <div className="motion-preview absolute inset-0">
                       <video src={activeMediaItem.video} poster={activeMediaItem.poster} className="h-full w-full object-cover" autoPlay muted loop playsInline preload="metadata" aria-label={`Preview de movimento do pavilhão — ${activeMediaItem.label}`} />
@@ -769,10 +858,10 @@ export default function Home() {
                       <div className="absolute bottom-6 right-6 grid h-14 w-14 place-items-center rounded-full border border-[#e96b3b] bg-[#e96b3b] text-[#171715]"><Play size={18} fill="currentColor" /></div>
                     </div>
                   ) : (
-                    <img key={activeMediaItem.id} src={activeMediaItem.src} alt={activeMediaItem.title} className="carousel-image absolute inset-0 h-full w-full object-cover" />
+                    <img key={activeMediaItem.id} src={activeMediaItem.src} alt={activeMediaItem.title} className="carousel-image h-full w-full object-cover" />
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#171715] via-[#171715]/5 to-transparent" />
-                  <div className="absolute inset-x-5 bottom-5 sm:inset-x-8 sm:bottom-8">
+                  </div>
+                  <div className="border-t border-[#f2efe6]/15 p-5 sm:p-7">
                     <div className="flex items-center gap-3 font-mono text-[10px] uppercase tracking-[0.15em] text-[#e96b3b]"><span className="h-px w-8 bg-[#e96b3b]" /> {activeMediaItem.label}</div>
                     <h3 className="font-display mt-4 max-w-xl text-4xl font-black uppercase leading-[0.88] tracking-[-0.06em] text-[#f2efe6] sm:text-6xl">{activeMediaItem.title}</h3>
                     <p className="mt-4 max-w-md text-sm leading-relaxed text-[#f2efe6]/65">{activeMediaItem.caption}</p>
