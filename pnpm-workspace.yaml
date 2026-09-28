@@ -1,0 +1,12 @@
+# Definições do pnpm. A PARTIR DO pnpm 10.9 (estamos no 10.15.1 via packageManager)
+# este ficheiro é a ÚNICA fonte: o campo "pnpm" do package.json está deprecado e
+# fazia o pnpm imprimir um aviso em cada comando (que a PowerShell mostrava a
+# vermelho, como se fosse um erro).
+#
+# packages: o projeto é a raiz (a pasta single-package).
+packages:
+  - "."
+patchedDependencies:
+  wouter@3.7.1: patches/wouter@3.7.1.patch
+overrides:
+  tailwindcss>nanoid: 3.3.7

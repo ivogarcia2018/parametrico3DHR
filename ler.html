@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dossier Executivo & Apresentação — IA para Arquitetura [6 h]</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Plus Jakarta Sans & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'system-ui', '-apple-system', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#fffbeb',
+              100: '#fef3c7',
+              200: '#fde68a',
+              300: '#fcd34d',
+              400: '#fbbf24',
+              500: '#f59e0b',
+              600: '#d97706',
+              700: '#b45309',
+              800: '#92400e',
+              900: '#78350f',
+              950: '#451a03',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    :root {
+      --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+    body {
+      font-family: var(--font-sans);
+      color: #18181b;
+      background-color: #0f1013;
+      -webkit-font-smoothing: antialiased;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Print optimization for pristine A4 export */
+    @media print {
+      body {
+        background-color: #ffffff !important;
+        color: #000000 !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .print-container {
+        display: block !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      .slide-page {
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: space-between !important;
+        min-height: 270mm !important;
+        height: auto !important;
+        max-height: 290mm !important;
+        page-break-after: always !important;
+        break-after: page !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+        border: 1px solid #e4e4e7 !important;
+        box-shadow: none !important;
+        border-radius: 8px !important;
+        margin-bottom: 0 !important;
+        padding: 12mm 15mm !important;
+        background: #ffffff !important;
+        color: #09090b !important;
+      }
+      @page {
+        size: A4 portrait;
+        margin: 8mm;
+      }
+    }
+
+    /* Custom smooth transition for slide changes */
+    .slide-transition {
+      transition: opacity 0.28s cubic-bezier(0.4, 0, 0.2, 1), transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Custom subtle scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #18181b;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #3f3f46;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #71717a;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-amber-500 selection:text-black">
+
+  <!-- Header Bar (Screen only) -->
+  <header class="no-print sticky top-0 z-50 bg-zinc-950/90 backdrop-blur-md border-b border-zinc-800/80 px-4 py-3 text-zinc-100">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+      
+      <!-- Brand & Title -->
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-zinc-950 font-black text-xs shadow-md shadow-amber-500/20">
+          IA
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs uppercase tracking-widest font-mono font-semibold text-amber-400">Dossier Executivo</span>
+            <span class="text-zinc-600">&bull;</span>
+            <span class="text-xs text-zinc-400">Workshop Prático [6 h]</span>
+          </div>
+          <h1 class="text-sm font-bold text-zinc-100 tracking-tight">
+            Arquitetura Generativa & Agêntica
+          </h1>
+        </div>
+      </div>
+
+      <!-- Presentation & View Mode Switcher -->
+      <div class="flex items-center gap-2">
+        <div class="bg-zinc-900 p-1 rounded-xl border border-zinc-800 flex text-xs font-medium text-zinc-400">
+          <button id="btn-mode-slides" onclick="switchMode('slides')" class="px-3 py-1.5 rounded-lg bg-amber-500 text-zinc-950 font-semibold shadow-sm transition">
+            Modo Apresentação
+          </button>
+          <button id="btn-mode-doc" onclick="switchMode('doc')" class="px-3 py-1.5 rounded-lg hover:text-zinc-100 transition">
+            Dossier Completo (A4)
+          </button>
+        </div>
+
+        <!-- Print to PDF button -->
+        <button onclick="window.print()" class="flex items-center gap-2 bg-zinc-100 hover:bg-white text-zinc-900 font-semibold text-xs px-3.5 py-1.5 rounded-xl shadow transition">
+          <svg class="w-3.5 h-3.5 text-zinc-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+          </svg>
+          Exportar PDF
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Slide Deck Controller (Visible in Slides mode) -->
+  <aside id="slide-controller" class="no-print bg-zinc-900/90 border-b border-zinc-800/60 px-4 py-2 text-xs text-zinc-400 flex items-center justify-between">
+    <div class="max-w-7xl mx-auto w-full flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <button onclick="prevSlide()" class="p-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 transition" title="Diapositivo Anterior (Seta Esquerda)">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+        </button>
+        <span id="slide-counter" class="font-mono text-xs px-2.5 py-1 bg-zinc-800/80 rounded-md text-amber-400 font-semibold">
+          01 / 07
+        </span>
+        <button onclick="nextSlide()" class="p-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 transition" title="Próximo Diapositivo (Seta Direita / Espaço)">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+        </button>
+        <span class="hidden sm:inline text-[11px] text-zinc-500 ml-2">Dica: use as teclas de setas do teclado &larr; &rarr;</span>
+      </div>
+
+      <!-- Quick jump pill indicators -->
+      <div class="flex items-center gap-1.5" id="slide-indicators">
+        <!-- Rendered by JS -->
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button onclick="toggleFullscreen()" class="px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[11px] font-mono transition flex items-center gap-1">
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0 0l-5-5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
+          Ecrã Inteiro
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Slides / Document Container -->
+  <main id="main-content" class="flex-1 max-w-6xl mx-auto w-full p-4 sm:p-8 flex flex-col justify-center items-center print-container">
+
+    <!-- ========================================== -->
+    <!-- SLIDE 1: CAPA & VISÃO EXECUTIVA            -->
+    <!-- ========================================== -->
+    <section class="slide-page w-full bg-white rounded-2xl border border-zinc-200 p-8 sm:p-12 shadow-2xl relative overflow-hidden mb-8 slide-transition">
+      <!-- Decorative background accent -->
+      <div class="absolute -top-32 -right-32 w-96 h-96 bg-amber-400/10 rounded-full blur-3xl pointer-events-none"></div>
+
+      <!-- Header Top Row -->
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-zinc-100 pb-6">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold uppercase tracking-wider">
+          <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+          Proposta Pedagógica & Editorial &middot; Formação Avançada
+        </div>
+        <div class="font-mono text-xs text-zinc-400">
+          Ref. ARQ-IA-2026-6H &middot; 23 Setembro 2026
+        </div>
+      </div>
+
+      <!-- Central Hero Content -->
+      <div class="my-auto py-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+        <div class="lg:col-span-7 space-y-5">
+          <div class="space-y-2">
+            <span class="font-mono text-sm font-semibold tracking-wider text-amber-600 uppercase">
+              Workshop Prático Síncrono [6 h]
+            </span>
+            <h2 class="text-3xl sm:text-5xl font-extrabold tracking-tight text-zinc-950 leading-tight">
+              IA para Arquitetura
+            </h2>
+            <p class="text-xl sm:text-2xl font-medium text-zinc-600 leading-snug">
+              Arquitetura Generativa & Agêntica: Da ideação ao modelo paramétrico e à apresentação cinematográfica.
+            </p>
+          </div>
+
+          <p class="text-sm text-zinc-700 leading-relaxed max-w-xl">
+            Um método rigoroso que articula curadoria de catálogos industriais, orquestração de agentes de código no Rhino 3D com supervisão humana contínua e visualização fotorrealista fiel à geometria construída.
+          </p>
+
+          <div class="flex flex-wrap gap-2 pt-2">
+            <span class="px-2.5 py-1 bg-zinc-100 text-zinc-700 rounded-md text-xs font-mono font-medium">Rhino 8</span>
+            <span class="px-2.5 py-1 bg-zinc-100 text-zinc-700 rounded-md text-xs font-mono font-medium">Model Context Protocol (MCP)</span>
+            <span class="px-2.5 py-1 bg-zinc-100 text-zinc-700 rounded-md text-xs font-mono font-medium">VS Code + Cline</span>
+            <span class="px-2.5 py-1 bg-zinc-100 text-zinc-700 rounded-md text-xs font-mono font-medium">NotebookLM</span>
+            <span class="px-2.5 py-1 bg-zinc-100 text-zinc-700 rounded-md text-xs font-mono font-medium">Gemini 3.1 Flash Image</span>
+            <span class="px-2.5 py-1 bg-zinc-100 text-zinc-700 rounded-md text-xs font-mono font-medium">Veo</span>
+          </div>
+        </div>
+
+        <!-- Metric Highlight Cards -->
+        <div class="lg:col-span-5 bg-zinc-900 rounded-2xl p-6 text-white shadow-xl space-y-6">
+          <div class="border-b border-zinc-800 pb-4">
+            <div class="text-xs font-mono uppercase tracking-wider text-amber-400">Resumo da Carga Operacional</div>
+            <div class="text-4xl font-black mt-1 text-white flex items-baseline gap-2">
+              6 Horas
+              <span class="text-sm font-normal text-zinc-400">de relógio</span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div class="p-3 bg-zinc-800/60 rounded-xl border border-zinc-800">
+              <div class="text-2xl font-extrabold text-amber-400">2 &times; 3 h</div>
+              <div class="text-xs text-zinc-400 mt-0.5">Sessões Online</div>
+            </div>
+            <div class="p-3 bg-zinc-800/60 rounded-xl border border-zinc-800">
+              <div class="text-2xl font-extrabold text-white">6 a 8</div>
+              <div class="text-xs text-zinc-400 mt-0.5">Vagas por Turma</div>
+            </div>
+            <div class="p-3 bg-zinc-800/60 rounded-xl border border-zinc-800">
+              <div class="text-2xl font-extrabold text-white">1 Objeto</div>
+              <div class="text-xs text-zinc-400 mt-0.5">Pavilhão Helicoidal</div>
+            </div>
+            <div class="p-3 bg-zinc-800/60 rounded-xl border border-zinc-800">
+              <div class="text-2xl font-extrabold text-emerald-400">100%</div>
+              <div class="text-xs text-zinc-400 mt-0.5">Human-in-the-Loop</div>
+            </div>
+          </div>
+
+          <div class="text-[11px] font-mono text-zinc-400 border-t border-zinc-800 pt-3 flex items-center justify-between">
+            <span>Metodologia: Learning by Doing</span>
+            <span class="text-amber-400 font-semibold">&bull; Pitch ao Vivo</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Slide Footer -->
+      <div class="border-t border-zinc-100 pt-4 flex flex-wrap justify-between items-center text-xs text-zinc-500">
+        <div>Dossier Editorial &bull; IA para Arquitetura</div>
+        <div class="font-mono">Slide 01 &mdash; Capa & Visão Geral</div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- SLIDE 2: A IMPORTÂNCIA ESTRATÉGICA        -->
+    <!-- ========================================== -->
+    <section class="slide-page w-full bg-white rounded-2xl border border-zinc-200 p-8 sm:p-12 shadow-2xl relative overflow-hidden mb-8 slide-transition">
+      <!-- Slide Header -->
+      <div class="flex justify-between items-center border-b border-zinc-100 pb-4 mb-6">
+        <div>
+          <span class="text-xs font-mono font-bold text-amber-600 uppercase tracking-wider">Fundamentação & Mercado</span>
+          <h3 class="text-2xl sm:text-3xl font-extrabold text-zinc-950 mt-1">Porquê Este Workshop?</h3>
+        </div>
+        <span class="text-xs bg-zinc-100 px-3 py-1 rounded-full font-mono text-zinc-600">A Ruptura do Modelo Tradicional</span>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 my-auto py-2">
+        <!-- O Problema Atual -->
+        <div class="lg:col-span-6 space-y-4">
+          <div class="p-5 bg-rose-50/60 border border-rose-200/80 rounded-2xl space-y-2">
+            <div class="flex items-center gap-2 text-rose-700 font-bold text-sm">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+              O Impasse Atual da IA na Arquitetura
+            </div>
+            <p class="text-xs text-rose-900/80 leading-relaxed">
+              A inteligência artificial tem oscilado entre dois extremos inoperantes: <strong>renders conceituais impressionantes mas irrealizáveis</strong> (alucinações espaciais desprovidas de física e juntas construtivas) ou <strong>scripts isolados de automação</strong> sem ligação visual à apresentação do atelier.
+            </p>
+          </div>
+
+          <div class="space-y-3">
+            <h4 class="font-bold text-sm text-zinc-900 uppercase tracking-wider text-xs">A Questão Crítica da Prática Contemporânea</h4>
+            <blockquote class="p-4 bg-zinc-50 border-l-4 border-amber-500 rounded-r-xl text-sm italic font-medium text-zinc-800 leading-relaxed">
+              &ldquo;Como passar de uma intenção espacial para um modelo 3D rigorosamente mensurável e, deste, para uma narrativa visual fotorrealista &mdash; mantendo sempre o controlo autoral e geométrico do arquiteto?&rdquo;
+            </blockquote>
+          </div>
+        </div>
+
+        <!-- A Solução: Rhino como Âncora de Verdade -->
+        <div class="lg:col-span-6 space-y-4">
+          <div class="p-5 bg-emerald-50/60 border border-emerald-200/80 rounded-2xl space-y-2">
+            <div class="flex items-center gap-2 text-emerald-800 font-bold text-sm">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+              A Resposta: O Rhino 3D como Âncora Absoluta
+            </div>
+            <p class="text-xs text-emerald-950/80 leading-relaxed">
+              O modelo 3D no Rhino é a <strong>única fonte de verdade geométrica</strong>. A IA generativa não substitui a modelação: atua sob supervisão estrita (<em>Human-in-the-Loop</em>), onde cada comando é inspecionado antes de transformar o espaço.
+            </p>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3 pt-2">
+            <div class="p-3.5 bg-zinc-50 rounded-xl border border-zinc-200 text-xs">
+              <div class="font-bold text-zinc-900 font-mono mb-1">Curadoria Factual</div>
+              <p class="text-zinc-600 text-[11px]">NotebookLM ancorado em catálogos reais sem alucinação de dados industriais.</p>
+            </div>
+            <div class="p-3.5 bg-zinc-50 rounded-xl border border-zinc-200 text-xs">
+              <div class="font-bold text-zinc-900 font-mono mb-1">Agente Supervisionado</div>
+              <p class="text-zinc-600 text-[11px]">Cline no VS Code com ciclo seguro: <em>Plan &rarr; Approve &rarr; Execute &rarr; Inspect</em>.</p>
+            </div>
+            <div class="p-3.5 bg-zinc-50 rounded-xl border border-zinc-200 text-xs">
+              <div class="font-bold text-zinc-900 font-mono mb-1">Fidelidade Morfológica</div>
+              <p class="text-zinc-600 text-[11px]">Nano Banana 2 ancorado na silhueta 3D sem desvios de escala ou proporção.</p>
+            </div>
+            <div class="p-3.5 bg-zinc-50 rounded-xl border border-zinc-200 text-xs">
+              <div class="font-bold text-zinc-900 font-mono mb-1">Cinematografia Estável</div>
+              <p class="text-zinc-600 text-[11px]">Gemini Omni / Veo gerando planos contínuos sem deformação das costelas estruturais.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Slide Footer -->
+      <div class="border-t border-zinc-100 pt-4 flex justify-between items-center text-xs text-zinc-500">
+        <div>Dossier Editorial &bull; IA para Arquitetura</div>
+        <div class="font-mono">Slide 02 &mdash; Enquadramento Estratégico</div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- SLIDE 3: O OBJETO ARQUITETÓNICO (ANATOMIA) -->
+    <!-- ========================================== -->
+    <section class="slide-page w-full bg-white rounded-2xl border border-zinc-200 p-8 sm:p-12 shadow-2xl relative overflow-hidden mb-8 slide-transition">
+      <!-- Slide Header -->
+      <div class="flex justify-between items-center border-b border-zinc-100 pb-4 mb-6">
+        <div>
+          <span class="text-xs font-mono font-bold text-amber-600 uppercase tracking-wider">Objeto de Estudo & Construtibilidade</span>
+          <h3 class="text-2xl sm:text-3xl font-extrabold text-zinc-950 mt-1">Pavilhão Helicoidal em Estrutura Waffle</h3>
+        </div>
+        <span class="text-xs bg-zinc-100 px-3 py-1 rounded-full font-mono text-zinc-600">Contraplacado de Bétula</span>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 my-auto items-center py-2">
+        <!-- Technical Vector Architectural Drawing -->
+        <div class="lg:col-span-6 bg-zinc-950 rounded-2xl p-6 text-white shadow-inner flex flex-col justify-between">
+          <div class="flex justify-between items-center text-xs border-b border-zinc-800 pb-3">
+            <span class="font-mono text-amber-400 font-semibold tracking-wider">CORTE AXONOMÉTRICO ESQUEMÁTICO</span>
+            <span class="text-zinc-500 font-mono text-[10px]">ESC: S/ ESCALA</span>
+          </div>
+
+          <!-- SVG Architectural Schema of Pavilion -->
+          <div class="py-4 flex justify-center items-center">
+            <svg class="w-full max-w-sm h-48" viewBox="0 0 320 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Radial Helical Spine -->
+              <path d="M 30 160 C 45 40, 120 15, 180 45 C 240 75, 290 125, 300 160" stroke="#f59e0b" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="4 2" />
+              <!-- Outer Envelope Boundary -->
+              <path d="M 20 160 C 35 25, 120 0, 190 35 C 260 70, 305 120, 310 160" stroke="#71717a" stroke-width="1.5" stroke-dasharray="2 2" opacity="0.6" />
+              
+              <!-- Vertical Radial Ribs (Waffle Ribs) -->
+              <path d="M 45 160 C 55 65, 95 35, 135 48" stroke="#e4e4e7" stroke-width="2" opacity="0.7" />
+              <path d="M 75 160 C 85 75, 120 45, 155 58" stroke="#e4e4e7" stroke-width="2" opacity="0.8" />
+              <path d="M 105 160 C 115 85, 145 60, 180 70" stroke="#e4e4e7" stroke-width="2.5" />
+              <path d="M 135 160 C 145 95, 175 75, 210 88" stroke="#fbbf24" stroke-width="2.5" />
+              <path d="M 165 160 C 175 105, 205 90, 240 108" stroke="#ffffff" stroke-width="3" />
+              <path d="M 195 160 C 205 118, 235 108, 268 128" stroke="#e4e4e7" stroke-width="2" opacity="0.8" />
+              <path d="M 225 160 C 235 130, 260 125, 288 145" stroke="#e4e4e7" stroke-width="2" opacity="0.6" />
+
+              <!-- Circular Bench Hub at 450mm -->
+              <ellipse cx="230" cy="158" rx="55" ry="16" fill="#27272a" stroke="#f59e0b" stroke-width="2" />
+              <text x="230" y="162" fill="#fafafa" font-size="9" font-family="monospace" text-anchor="middle" font-weight="bold">BANCO h=450 mm</text>
+
+              <!-- Shelf Intersection Lines (Half-Lap Slots) -->
+              <line x1="60" y1="125" x2="270" y2="125" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="3 2" />
+              <text x="70" y="118" fill="#fbbf24" font-size="8" font-family="monospace">Prateleiras / Encaixe Mútuo (Half-Lap)</text>
+
+              <!-- Dimensional Bounds -->
+              <line x1="20" y1="180" x2="305" y2="180" stroke="#71717a" stroke-width="1" />
+              <circle cx="20" cy="180" r="2.5" fill="#71717a"/>
+              <circle cx="305" cy="180" r="2.5" fill="#71717a"/>
+              <text x="162" y="193" fill="#a1a1aa" font-size="9" font-family="monospace" text-anchor="middle">&Oslash; 5 000 mm &middot; Altura Máx: 3 000 mm &middot; Abertura: 60&deg;</text>
+            </svg>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2 border-t border-zinc-800 pt-3 text-[10px] font-mono text-zinc-400">
+            <div>Chapa: <strong>24 mm</strong></div>
+            <div>Folga CNC: <strong>0,5 mm</strong></div>
+            <div>Tolerância: <strong>0,01 mm</strong></div>
+          </div>
+        </div>
+
+        <!-- Descriptive Anatomy Breakdown -->
+        <div class="lg:col-span-6 space-y-4">
+          <div class="space-y-1">
+            <h4 class="font-bold text-base text-zinc-900">Anatomia do Pavilhão de Leitura</h4>
+            <p class="text-xs text-zinc-600 leading-relaxed">
+              Inspirado em estruturas biomiméticas de praça pública (como o pavilhão <em>Rapana</em>), o exercício conjuga espaço de permanência, abrigo solar e estantes integradas.
+            </p>
+          </div>
+
+          <div class="space-y-2.5">
+            <div class="p-3 bg-zinc-50 border border-zinc-200 rounded-xl text-xs flex items-start gap-3">
+              <span class="w-6 h-6 rounded-full bg-amber-500 text-zinc-950 font-bold flex items-center justify-center font-mono text-[11px] shrink-0 mt-0.5">1</span>
+              <div>
+                <strong class="text-zinc-900">Espinha Helicoidal Cónica:</strong>
+                <span class="text-zinc-600"> Transição fluida de raio e altura que define a entrada generosa de 60&deg; e culmina no acolhimento do banco interior.</span>
+              </div>
+            </div>
+
+            <div class="p-3 bg-zinc-50 border border-zinc-200 rounded-xl text-xs flex items-start gap-3">
+              <span class="w-6 h-6 rounded-full bg-amber-500 text-zinc-950 font-bold flex items-center justify-center font-mono text-[11px] shrink-0 mt-0.5">2</span>
+              <div>
+                <strong class="text-zinc-900">24 Costelas Radiais Paramétricas:</strong>
+                <span class="text-zinc-600"> Perfis verticais únicos gerados por código, variando progressivamente a curvatura e a profundidade de sombra.</span>
+              </div>
+            </div>
+
+            <div class="p-3 bg-zinc-50 border border-zinc-200 rounded-xl text-xs flex items-start gap-3">
+              <span class="w-6 h-6 rounded-full bg-amber-500 text-zinc-950 font-bold flex items-center justify-center font-mono text-[11px] shrink-0 mt-0.5">3</span>
+              <div>
+                <strong class="text-zinc-900">Juntas Waffle (Half-Lap) com Folga:</strong>
+                <span class="text-zinc-600"> Entalhes a 50% da espessura com folga mecânica calculada (0,5 mm) para montagem a seco e rigidez tridimensional.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Slide Footer -->
+      <div class="border-t border-zinc-100 pt-4 flex justify-between items-center text-xs text-zinc-500">
+        <div>Dossier Editorial &bull; IA para Arquitetura</div>
+        <div class="font-mono">Slide 03 &mdash; O Objeto Arquitetónico</div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- SLIDE 4: ECOSSISTEMA & PIPELINE (5 FASES) -->
+    <!-- ========================================== -->
+    <section class="slide-page w-full bg-white rounded-2xl border border-zinc-200 p-8 sm:p-12 shadow-2xl relative overflow-hidden mb-8 slide-transition">
+      <!-- Slide Header -->
+      <div class="flex justify-between items-center border-b border-zinc-100 pb-4 mb-6">
+        <div>
+          <span class="text-xs font-mono font-bold text-amber-600 uppercase tracking-wider">Cadeia de Valor Encadeada</span>
+          <h3 class="text-2xl sm:text-3xl font-extrabold text-zinc-950 mt-1">O Pipeline de 5 Ferramentas Integradas</h3>
+        </div>
+        <span class="text-xs bg-zinc-100 px-3 py-1 rounded-full font-mono text-zinc-600">Sem Ruturas de Informação</span>
+      </div>
+
+      <div class="my-auto py-2">
+        <p class="text-xs sm:text-sm text-zinc-600 max-w-2xl mb-6">
+          Cada ferramenta foi escolhida com um propósito cirúrgico: a saída de uma etapa converte-se no dado de entrada estruturado da seguinte.
+        </p>
+
+        <!-- 5-Stage Step Flow Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-3.5">
+          <!-- Step 01 -->
+          <div class="bg-zinc-50 border border-zinc-200 hover:border-zinc-300 p-4 rounded-xl flex flex-col justify-between transition">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="w-6 h-6 rounded-full bg-zinc-900 text-white font-mono font-bold text-xs flex items-center justify-center">01</span>
+                <span class="text-[10px] font-mono text-zinc-400 uppercase font-semibold">Curadoria</span>
+              </div>
+              <h4 class="font-bold text-sm text-zinc-900">NotebookLM</h4>
+              <p class="text-xs text-zinc-600 mt-1">
+                Leitura de catálogos técnicos de bétula e limites de fresas CNC. Elimina respostas inventadas.
+              </p>
+            </div>
+            <div class="mt-4 pt-2.5 border-t border-zinc-200 text-[10px] font-mono text-zinc-500">
+              Entrada: PDFs Oficiais<br>
+              <strong class="text-zinc-900">Saída: Tabela Factual</strong>
+            </div>
+          </div>
+
+          <!-- Step 02 -->
+          <div class="bg-zinc-50 border border-zinc-200 hover:border-zinc-300 p-4 rounded-xl flex flex-col justify-between transition">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="w-6 h-6 rounded-full bg-zinc-900 text-white font-mono font-bold text-xs flex items-center justify-center">02</span>
+                <span class="text-[10px] font-mono text-zinc-400 uppercase font-semibold">Parâmetros</span>
+              </div>
+              <h4 class="font-bold text-sm text-zinc-900">Gemini Pro</h4>
+              <p class="text-xs text-zinc-600 mt-1">
+                Converte a intenção espacial em relações matemáticas e gera o bloco numérico JSON estruturado.
+              </p>
+            </div>
+            <div class="mt-4 pt-2.5 border-t border-zinc-200 text-[10px] font-mono text-zinc-500">
+              Entrada: Ficha de Requisitos<br>
+              <strong class="text-zinc-900">Saída: parametros.json</strong>
+            </div>
+          </div>
+
+          <!-- Step 03 -->
+          <div class="bg-amber-50/70 border-2 border-amber-400 p-4 rounded-xl flex flex-col justify-between shadow-xs transition">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="w-6 h-6 rounded-full bg-amber-600 text-white font-mono font-bold text-xs flex items-center justify-center">03</span>
+                <span class="text-[10px] font-mono text-amber-800 uppercase font-bold">Modelação 3D</span>
+              </div>
+              <h4 class="font-bold text-sm text-zinc-950">Cline + Rhino MCP</h4>
+              <p class="text-xs text-zinc-700 mt-1">
+                Agente no VS Code executando código Python/RhinoScript em 4 fases sob aprovação humana estrita.
+              </p>
+            </div>
+            <div class="mt-4 pt-2.5 border-t border-amber-200 text-[10px] font-mono text-amber-950">
+              Entrada: JSON + Sessão 3D<br>
+              <strong class="text-amber-900">Saída: Modelo .3dm fechado</strong>
+            </div>
+          </div>
+
+          <!-- Step 04 -->
+          <div class="bg-zinc-50 border border-zinc-200 hover:border-zinc-300 p-4 rounded-xl flex flex-col justify-between transition">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="w-6 h-6 rounded-full bg-zinc-900 text-white font-mono font-bold text-xs flex items-center justify-center">04</span>
+                <span class="text-[10px] font-mono text-zinc-400 uppercase font-semibold">Render</span>
+              </div>
+              <h4 class="font-bold text-sm text-zinc-900">Nano Banana 2</h4>
+              <p class="text-xs text-zinc-600 mt-1">
+                Renderização Image-to-Image respeitando rigorosamente a silhueta do modelo monocromático Rhino.
+              </p>
+            </div>
+            <div class="mt-4 pt-2.5 border-t border-zinc-200 text-[10px] font-mono text-zinc-500">
+              Entrada: Captura Clay/AO<br>
+              <strong class="text-zinc-900">Saída: Imagens 16:9 Fotorreais</strong>
+            </div>
+          </div>
+
+          <!-- Step 05 -->
+          <div class="bg-zinc-50 border border-zinc-200 hover:border-zinc-300 p-4 rounded-xl flex flex-col justify-between transition">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="w-6 h-6 rounded-full bg-zinc-900 text-white font-mono font-bold text-xs flex items-center justify-center">05</span>
+                <span class="text-[10px] font-mono text-zinc-400 uppercase font-semibold">Cinemática</span>
+              </div>
+              <h4 class="font-bold text-sm text-zinc-900">Gemini Omni / Veo</h4>
+              <p class="text-xs text-zinc-600 mt-1">
+                Geração de plano contínuo (dolly-in ou órbita suave) com estabilidade estrutural absoluta.
+              </p>
+            </div>
+            <div class="mt-4 pt-2.5 border-t border-zinc-200 text-[10px] font-mono text-zinc-500">
+              Entrada: Render Aprovado<br>
+              <strong class="text-zinc-900">Saída: Clipe MP4 (6–8 s)</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-6 p-4 bg-zinc-900 text-white rounded-xl flex flex-col sm:flex-row justify-between items-center gap-3 text-xs">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+            <span class="font-mono text-amber-300 font-semibold">Protocolo Human-in-the-Loop:</span>
+            <span class="text-zinc-300">Nenhum código é injetado no Rhino sem inspeção e clique explícito do formando.</span>
+          </div>
+          <span class="font-mono text-[11px] text-zinc-400">Segurança &bull; Sem Duplicados &bull; Rollback Ativo</span>
+        </div>
+      </div>
+
+      <!-- Slide Footer -->
+      <div class="border-t border-zinc-100 pt-4 flex justify-between items-center text-xs text-zinc-500">
+        <div>Dossier Editorial &bull; IA para Arquitetura</div>
+        <div class="font-mono">Slide 04 &mdash; Ecossistema de Ferramentas</div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- SLIDE 5: CRONOGRAMA OPERACIONAL (2x3h)    -->
+    <!-- ========================================== -->
+    <section class="slide-page w-full bg-white rounded-2xl border border-zinc-200 p-8 sm:p-12 shadow-2xl relative overflow-hidden mb-8 slide-transition">
+      <!-- Slide Header -->
+      <div class="flex justify-between items-center border-b border-zinc-100 pb-4 mb-6">
+        <div>
+          <span class="text-xs font-mono font-bold text-amber-600 uppercase tracking-wider">Gestão do Tempo & Atividades</span>
+          <h3 class="text-2xl sm:text-3xl font-extrabold text-zinc-950 mt-1">Cronograma Minuto a Minuto</h3>
+        </div>
+        <div class="text-xs font-mono text-zinc-600 bg-zinc-100 px-3 py-1 rounded-full">
+          340 min de Atividade Efetiva &middot; 2 Pausas de 10 min
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 my-auto py-1">
+        <!-- SESSÃO 1 -->
+        <div class="border border-zinc-200 rounded-2xl p-5 bg-zinc-50/50 space-y-4">
+          <div class="flex items-center justify-between border-b border-zinc-200 pb-3">
+            <div>
+              <span class="text-[10px] font-mono uppercase tracking-wider text-amber-700 font-bold">Sessão 01 &middot; 3h00 (170 min)</span>
+              <h4 class="font-bold text-base text-zinc-900">Curadoria & Modelação Agêntica</h4>
+            </div>
+            <span class="text-xs font-mono bg-zinc-900 text-white px-2.5 py-1 rounded-md">Dia 1</span>
+          </div>
+
+          <div class="space-y-3">
+            <div class="p-3 bg-white rounded-xl border border-zinc-200 text-xs">
+              <div class="flex justify-between font-bold text-zinc-900 mb-1">
+                <span>Bloco 1.1 &middot; Especificação e Dados</span>
+                <span class="font-mono text-zinc-500">40 min</span>
+              </div>
+              <p class="text-zinc-600 text-[11px]">Leitura cruzada no NotebookLM das fontes técnicas e extração do bloco numérico JSON no Gemini.</p>
+              <div class="mt-2 text-[10px] font-mono text-zinc-500 bg-zinc-50 p-1.5 rounded">Entregável: parametros.json validado</div>
+            </div>
+
+            <div class="p-3 bg-white rounded-xl border border-zinc-200 text-xs">
+              <div class="flex justify-between font-bold text-zinc-900 mb-1">
+                <span>Bloco 1.2 &middot; Ambiente Agêntico e MCP</span>
+                <span class="font-mono text-zinc-500">35 min</span>
+              </div>
+              <p class="text-zinc-600 text-[11px]">Ligação VS Code (Cline) ao Rhino 3D, verificação de tolerância (0,01 mm) e ponto de recuperação.</p>
+              <div class="mt-2 text-[10px] font-mono text-zinc-500 bg-zinc-50 p-1.5 rounded">Entregável: Teste de MCP aprovado</div>
+            </div>
+
+            <div class="py-1.5 text-center text-[11px] font-mono text-zinc-400 bg-zinc-200/50 rounded-lg">
+              Intervalo de Conforto (10 min) &middot; 01:15 &ndash; 01:25
+            </div>
+
+            <div class="p-3 bg-amber-50/80 rounded-xl border border-amber-200 text-xs">
+              <div class="flex justify-between font-bold text-amber-950 mb-1">
+                <span>Bloco 1.3 &middot; Modelação Paramétrica (4 Fases)</span>
+                <span class="font-mono font-bold text-amber-800">95 min</span>
+              </div>
+              <p class="text-zinc-700 text-[11px] mb-1.5">Espinha &rarr; 24 Costelas &rarr; Encaixes Waffle (0,5 mm folga) &rarr; Variação individual de parâmetros.</p>
+              <div class="text-[10px] font-mono text-amber-950 bg-white p-1.5 rounded border border-amber-200">Entregável: Ficheiro .3dm com sólidos fechados</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SESSÃO 2 -->
+        <div class="border border-zinc-200 rounded-2xl p-5 bg-zinc-50/50 space-y-4">
+          <div class="flex items-center justify-between border-b border-zinc-200 pb-3">
+            <div>
+              <span class="text-[10px] font-mono uppercase tracking-wider text-amber-700 font-bold">Sessão 02 &middot; 3h00 (170 min)</span>
+              <h4 class="font-bold text-base text-zinc-900">Visualização, Cinemática & Pitch</h4>
+            </div>
+            <span class="text-xs font-mono bg-zinc-900 text-white px-2.5 py-1 rounded-md">Dia 2</span>
+          </div>
+
+          <div class="space-y-3">
+            <div class="p-3 bg-white rounded-xl border border-zinc-200 text-xs">
+              <div class="flex justify-between font-bold text-zinc-900 mb-1">
+                <span>Bloco 2.1 &middot; Render com Fidelidade Estrita</span>
+                <span class="font-mono text-zinc-500">45 min</span>
+              </div>
+              <p class="text-zinc-600 text-[11px]">Capturas Clay no Rhino e geração no Nano Banana 2 preservando a geometria estrutural.</p>
+              <div class="mt-2 text-[10px] font-mono text-zinc-500 bg-zinc-50 p-1.5 rounded">Entregável: 2 capturas + 1 render fotorreal aprovado</div>
+            </div>
+
+            <div class="p-3 bg-white rounded-xl border border-zinc-200 text-xs">
+              <div class="flex justify-between font-bold text-zinc-900 mb-1">
+                <span>Bloco 2.2 &middot; Cinemática Espacial com Veo</span>
+                <span class="font-mono text-zinc-500">45 min</span>
+              </div>
+              <p class="text-zinc-600 text-[11px]">Planos contínuos (dolly-in ou órbita suave de 6 a 8 s) com estabilidade das ripas de bétula.</p>
+              <div class="mt-2 text-[10px] font-mono text-zinc-500 bg-zinc-50 p-1.5 rounded">Entregável: Clipe de vídeo MP4 sem distorções</div>
+            </div>
+
+            <div class="py-1.5 text-center text-[11px] font-mono text-zinc-400 bg-zinc-200/50 rounded-lg">
+              Intervalo de Conforto (10 min) &middot; 01:30 &ndash; 01:40
+            </div>
+
+            <div class="p-3 bg-white rounded-xl border border-zinc-200 text-xs">
+              <div class="flex justify-between font-bold text-zinc-900 mb-1">
+                <span>Blocos 2.3 & 2.4 &middot; Montagem e Showcase</span>
+                <span class="font-mono text-zinc-500">40 + 40 min</span>
+              </div>
+              <p class="text-zinc-600 text-[11px]">Demonstração de Podcast Áudio e AR mobile; Painel 16:9; Showcase individual de 3 min por formando.</p>
+              <div class="mt-2 text-[10px] font-mono text-zinc-500 bg-zinc-50 p-1.5 rounded">Entregável: Painel 16:9 + Pitch de 3 minutos</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Slide Footer -->
+      <div class="border-t border-zinc-100 pt-4 flex justify-between items-center text-xs text-zinc-500">
+        <div>Dossier Editorial &bull; IA para Arquitetura</div>
+        <div class="font-mono">Slide 05 &mdash; Cronograma Operacional</div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- SLIDE 6: FICHA DE REQUISITOS E TOLERÂNCIAS -->
+    <!-- ========================================== -->
+    <section class="slide-page w-full bg-white rounded-2xl border border-zinc-200 p-8 sm:p-12 shadow-2xl relative overflow-hidden mb-8 slide-transition">
+      <!-- Slide Header -->
+      <div class="flex justify-between items-center border-b border-zinc-100 pb-4 mb-6">
+        <div>
+          <span class="text-xs font-mono font-bold text-amber-600 uppercase tracking-wider">Rigor Fabril & Parâmetros Numéricos</span>
+          <h3 class="text-2xl sm:text-3xl font-extrabold text-zinc-950 mt-1">Ficha Técnica de Tolerâncias e Geometria</h3>
+        </div>
+        <span class="text-xs bg-zinc-100 px-3 py-1 rounded-full font-mono text-zinc-600">ModelUnits = mm</span>
+      </div>
+
+      <div class="my-auto py-2">
+        <p class="text-xs text-zinc-600 mb-4 max-w-2xl">
+          A distinção formal entre dados documentados de catálogo e hipóteses de ensaio de projeto é o alicerce para evitar alucinações construtivas.
+        </p>
+
+        <!-- Structured Data Table -->
+        <div class="overflow-x-auto rounded-xl border border-zinc-200">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="bg-zinc-900 text-white font-mono text-[11px]">
+                <th class="p-3">Parâmetro de Projeto</th>
+                <th class="p-3">Valor de Estudo</th>
+                <th class="p-3">Tolerância / Regra de Aplicação</th>
+                <th class="p-3">Estatuto Técnico</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-zinc-200 font-mono text-zinc-700 bg-white">
+              <tr class="hover:bg-zinc-50">
+                <td class="p-3 font-sans font-semibold text-zinc-900">Unidades de Trabalho</td>
+                <td class="p-3 font-bold text-zinc-900">Milímetros (mm)</td>
+                <td class="p-3">Tolerância absoluta: 0,01 mm</td>
+                <td class="p-3"><span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-sans font-semibold">Obrigatório</span></td>
+              </tr>
+              <tr class="hover:bg-zinc-50">
+                <td class="p-3 font-sans font-semibold text-zinc-900">Diâmetro Exterior / Altura</td>
+                <td class="p-3">5 000 mm / 3 000 mm</td>
+                <td class="p-3">Envolvente cónica helicoidal</td>
+                <td class="p-3"><span class="px-2 py-0.5 rounded bg-blue-100 text-blue-800 text-[10px] font-sans font-semibold">Base de Projeto</span></td>
+              </tr>
+              <tr class="hover:bg-zinc-50">
+                <td class="p-3 font-sans font-semibold text-zinc-900">Abertura de Entrada</td>
+                <td class="p-3">60&deg; de arco</td>
+                <td class="p-3">Circulação pedonal desobstruída</td>
+                <td class="p-3"><span class="px-2 py-0.5 rounded bg-blue-100 text-blue-800 text-[10px] font-sans font-semibold">Base de Projeto</span></td>
+              </tr>
+              <tr class="hover:bg-zinc-50">
+                <td class="p-3 font-sans font-semibold text-zinc-900">Altura do Banco Central</td>
+                <td class="p-3 font-bold text-zinc-900">450 mm</td>
+                <td class="p-3">Cota ergonómica standard de sentar</td>
+                <td class="p-3"><span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-sans font-semibold">Validado</span></td>
+              </tr>
+              <tr class="hover:bg-zinc-50">
+                <td class="p-3 font-sans font-semibold text-zinc-900">Número de Costelas Radiais</td>
+                <td class="p-3">24 costelas</td>
+                <td class="p-3">Gama de variação permitida: 20 a 28</td>
+                <td class="p-3"><span class="px-2 py-0.5 rounded bg-amber-100 text-amber-800 text-[10px] font-sans font-semibold">Paramétrico</span></td>
+              </tr>
+              <tr class="hover:bg-zinc-50">
+                <td class="p-3 font-sans font-semibold text-zinc-900">Espessura Nominal do Material</td>
+                <td class="p-3">24 mm (ou 18 mm)</td>
+                <td class="p-3">Contraplacado marítimo de bétula</td>
+                <td class="p-3"><span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-sans font-semibold">Catálogo</span></td>
+              </tr>
+              <tr class="hover:bg-zinc-50">
+                <td class="p-3 font-sans font-semibold text-zinc-900">Folga Mecânica de Encaixe</td>
+                <td class="p-3 font-bold text-zinc-900">0,5 mm total</td>
+                <td class="p-3">Compensação de dilatação e corte CNC</td>
+                <td class="p-3"><span class="px-2 py-0.5 rounded bg-purple-100 text-purple-800 text-[10px] font-sans font-semibold">Hipótese Ensaio</span></td>
+              </tr>
+              <tr class="hover:bg-zinc-50">
+                <td class="p-3 font-sans font-semibold text-zinc-900">Largura do Entalhe Waffle</td>
+                <td class="p-3 font-bold text-zinc-900">24,5 mm</td>
+                <td class="p-3">Espessura nominal (24 mm) + Folga (0,5 mm)</td>
+                <td class="p-3"><span class="px-2 py-0.5 rounded bg-purple-100 text-purple-800 text-[10px] font-sans font-semibold">Regra de Script</span></td>
+              </tr>
+              <tr class="hover:bg-zinc-50">
+                <td class="p-3 font-sans font-semibold text-zinc-900">Profundidade do Encaixe</td>
+                <td class="p-3">50% da largura da secção</td>
+                <td class="p-3">Encaixe mútuo meia-madeira (half-lap)</td>
+                <td class="p-3"><span class="px-2 py-0.5 rounded bg-purple-100 text-purple-800 text-[10px] font-sans font-semibold">Regra de Script</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="mt-4 p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-900 flex items-center justify-between">
+          <span class="font-medium"><strong>Nota de Fabricação:</strong> O exercício é um protótipo digital de estudo que prepara a geometria para pós-processamento e nesting CNC.</span>
+          <span class="font-mono text-[11px] font-bold text-amber-700">Tolerância Rhino &le; 0.01 mm</span>
+        </div>
+      </div>
+
+      <!-- Slide Footer -->
+      <div class="border-t border-zinc-100 pt-4 flex justify-between items-center text-xs text-zinc-500">
+        <div>Dossier Editorial &bull; IA para Arquitetura</div>
+        <div class="font-mono">Slide 06 &mdash; Ficha Técnica & Tolerâncias</div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- SLIDE 7: CRITÉRIOS, AVALIAÇÃO & INSCRIÇÃO  -->
+    <!-- ========================================== -->
+    <section class="slide-page w-full bg-white rounded-2xl border border-zinc-200 p-8 sm:p-12 shadow-2xl relative overflow-hidden mb-8 slide-transition">
+      <!-- Slide Header -->
+      <div class="flex justify-between items-center border-b border-zinc-100 pb-4 mb-6">
+        <div>
+          <span class="text-xs font-mono font-bold text-amber-600 uppercase tracking-wider">Certificação & Inscrição</span>
+          <h3 class="text-2xl sm:text-3xl font-extrabold text-zinc-950 mt-1">O Que Leva & Condições Oficiais</h3>
+        </div>
+        <span class="text-xs bg-emerald-100 text-emerald-800 font-semibold px-3 py-1 rounded-full font-mono">5 Entregáveis Práticos</span>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 my-auto py-1">
+        <!-- O que o participante leva -->
+        <div class="lg:col-span-7 space-y-3">
+          <h4 class="font-bold text-xs text-zinc-400 uppercase tracking-wider font-mono">Resultados Concretos no Final das 6 Horas</h4>
+
+          <div class="p-3 bg-zinc-50 rounded-xl border border-zinc-200 text-xs flex items-start gap-3">
+            <span class="w-5 h-5 rounded-full bg-zinc-900 text-white font-mono font-bold text-[10px] flex items-center justify-center shrink-0 mt-0.5">1</span>
+            <div>
+              <strong class="text-zinc-900">Modelo 3D Paramétrico Funcional (.3dm):</strong>
+              <span class="text-zinc-600"> Com sólidos fechados (Closed Polysurface), banco a 450 mm e camadas organizadas.</span>
+            </div>
+          </div>
+
+          <div class="p-3 bg-zinc-50 rounded-xl border border-zinc-200 text-xs flex items-start gap-3">
+            <span class="w-5 h-5 rounded-full bg-zinc-900 text-white font-mono font-bold text-[10px] flex items-center justify-center shrink-0 mt-0.5">2</span>
+            <div>
+              <strong class="text-zinc-900">Script Reutilizável de Código (.py):</strong>
+              <span class="text-zinc-600"> Associado ao ficheiro externo de parâmetros para regeneração limpa de variantes.</span>
+            </div>
+          </div>
+
+          <div class="p-3 bg-zinc-50 rounded-xl border border-zinc-200 text-xs flex items-start gap-3">
+            <span class="w-5 h-5 rounded-full bg-zinc-900 text-white font-mono font-bold text-[10px] flex items-center justify-center shrink-0 mt-0.5">3</span>
+            <div>
+              <strong class="text-zinc-900">Portfólio de Apresentação de Concurso:</strong>
+              <span class="text-zinc-600"> Painel 16:9 contendo capturas técnicas, renders Nano Banana 2 e clipe de vídeo cinemático.</span>
+            </div>
+          </div>
+
+          <div class="p-3 bg-zinc-50 rounded-xl border border-zinc-200 text-xs flex items-start gap-3">
+            <span class="w-5 h-5 rounded-full bg-zinc-900 text-white font-mono font-bold text-[10px] flex items-center justify-center shrink-0 mt-0.5">4</span>
+            <div>
+              <strong class="text-zinc-900">Kit de Prompts & Guiões Operacionais:</strong>
+              <span class="text-zinc-600"> Todos os guiões testados para reaplicar autonomamente nos projetos do atelier.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Showcase & Inscrição Box -->
+        <div class="lg:col-span-5 bg-zinc-900 text-white rounded-2xl p-6 flex flex-col justify-between shadow-xl space-y-4">
+          <div>
+            <div class="inline-block bg-amber-500 text-zinc-950 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded font-mono mb-2">
+              Showcase Final ao Vivo
+            </div>
+            <h4 class="font-bold text-lg text-white">Pitch Deck de 3 Minutos</h4>
+            <p class="text-xs text-zinc-400 mt-1 leading-relaxed">
+              Cada formando defende a sua variante em direto perante a turma (conceito &rarr; modelo Rhino &rarr; render &rarr; vídeo &rarr; reflexão crítica).
+            </p>
+
+            <div class="mt-4 pt-3 border-t border-zinc-800 space-y-1.5 text-xs">
+              <div class="flex justify-between text-zinc-300">
+                <span class="text-zinc-400">Formato:</span>
+                <span class="font-medium text-white">Online Síncrono (em direto)</span>
+              </div>
+              <div class="flex justify-between text-zinc-300">
+                <span class="text-zinc-400">Turma Limitada:</span>
+                <span class="font-semibold text-amber-400">Máximo 8 Participantes</span>
+              </div>
+              <div class="flex justify-between text-zinc-300">
+                <span class="text-zinc-400">Pré-requisito:</span>
+                <span class="text-white">Navegação básica no Rhino</span>
+              </div>
+              <div class="flex justify-between text-zinc-300">
+                <span class="text-zinc-400">Software:</span>
+                <span class="text-white">Rhino 8 + VS Code + Cline</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="pt-3 border-t border-zinc-800">
+            <div class="bg-amber-500 text-zinc-950 font-bold text-xs text-center py-2.5 rounded-xl uppercase tracking-wider shadow">
+              Candidaturas & Informações Abertas
+            </div>
+            <p class="text-[10px] text-zinc-400 text-center mt-2">
+              Dossiê oficial aprovado para edição de Setembro 2026.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Slide Footer -->
+      <div class="border-t border-zinc-100 pt-4 flex justify-between items-center text-xs text-zinc-500">
+        <div>Dossier Editorial &bull; IA para Arquitetura</div>
+        <div class="font-mono">Slide 07 &mdash; Entregáveis & Inscrição</div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Interactive Script for Slide Navigation, Keyboard and Print Modes -->
+  <script>
+    let currentSlide = 0;
+    let isSlidesMode = true;
+    const slides = document.querySelectorAll('.slide-page');
+    const totalSlides = slides.length;
+    const counterEl = document.getElementById('slide-counter');
+    const indicatorsEl = document.getElementById('slide-indicators');
+    const controllerEl = document.getElementById('slide-controller');
+    const btnSlides = document.getElementById('btn-mode-slides');
+    const btnDoc = document.getElementById('btn-mode-doc');
+
+    // Initialize pill dots
+    function initIndicators() {
+      indicatorsEl.innerHTML = '';
+      slides.forEach((_, idx) => {
+        const dot = document.createElement('button');
+        dot.className = `w-2 h-2 rounded-full transition-all ${idx === currentSlide ? 'bg-amber-400 w-5' : 'bg-zinc-700 hover:bg-zinc-500'}`;
+        dot.title = `Ir para Diapositivo ${idx + 1}`;
+        dot.onclick = () => goToSlide(idx);
+        indicatorsEl.appendChild(dot);
+      });
+    }
+
+    // Render active slide
+    function renderSlides() {
+      if (!isSlidesMode) return;
+
+      slides.forEach((slide, idx) => {
+        if (idx === currentSlide) {
+          slide.classList.remove('hidden');
+          slide.style.opacity = '1';
+          slide.style.transform = 'scale(1)';
+        } else {
+          slide.classList.add('hidden');
+          slide.style.opacity = '0';
+          slide.style.transform = 'scale(0.98)';
+        }
+      });
+
+      const formattedCurrent = String(currentSlide + 1).padStart(2, '0');
+      const formattedTotal = String(totalSlides).padStart(2, '0');
+      counterEl.textContent = `${formattedCurrent} / ${formattedTotal}`;
+
+      // Update dots
+      const dots = indicatorsEl.children;
+      for (let i = 0; i < dots.length; i++) {
+        if (i === currentSlide) {
+          dots[i].className = 'w-5 h-2 rounded-full bg-amber-400 transition-all';
+        } else {
+          dots[i].className = 'w-2 h-2 rounded-full bg-zinc-700 hover:bg-zinc-500 transition-all';
+        }
+      }
+    }
+
+    function nextSlide() {
+      if (!isSlidesMode) return;
+      if (currentSlide < totalSlides - 1) {
+        currentSlide++;
+        renderSlides();
+      }
+    }
+
+    function prevSlide() {
+      if (!isSlidesMode) return;
+      if (currentSlide > 0) {
+        currentSlide--;
+        renderSlides();
+      }
+    }
+
+    function goToSlide(index) {
+      if (!isSlidesMode) return;
+      currentSlide = index;
+      renderSlides();
+    }
+
+    // Mode Switcher: Slides vs Document/A4
+    function switchMode(mode) {
+      if (mode === 'slides') {
+        isSlidesMode = true;
+        controllerEl.classList.remove('hidden');
+        btnSlides.classList.add('bg-amber-500', 'text-zinc-950', 'font-semibold');
+        btnSlides.classList.remove('hover:text-zinc-100');
+        btnDoc.classList.remove('bg-amber-500', 'text-zinc-950', 'font-semibold');
+        btnDoc.classList.add('hover:text-zinc-100');
+        renderSlides();
+      } else {
+        // Document / A4 mode (displays all slides vertically for reading/printing)
+        isSlidesMode = false;
+        controllerEl.classList.add('hidden');
+        btnDoc.classList.add('bg-amber-500', 'text-zinc-950', 'font-semibold');
+        btnDoc.classList.remove('hover:text-zinc-100');
+        btnSlides.classList.remove('bg-amber-500', 'text-zinc-950', 'font-semibold');
+        btnSlides.classList.add('hover:text-zinc-100');
+
+        slides.forEach(slide => {
+          slide.classList.remove('hidden');
+          slide.style.opacity = '1';
+          slide.style.transform = 'none';
+        });
+      }
+    }
+
+    // Fullscreen Toggle
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        }
+      }
+    }
+
+    // Keyboard navigation
+    window.addEventListener('keydown', (e) => {
+      if (!isSlidesMode) return;
+      if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') {
+        e.preventDefault();
+        nextSlide();
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        e.preventDefault();
+        prevSlide();
+      } else if (e.key === 'Home') {
+        e.preventDefault();
+        goToSlide(0);
+      } else if (e.key === 'End') {
+        e.preventDefault();
+        goToSlide(totalSlides - 1);
+      }
+    });
+
+    // Touch swipe gestures for mobile presentation
+    let touchStartX = 0;
+    let touchEndX = 0;
+
+    document.addEventListener('touchstart', (e) => {
+      touchStartX = e.changedTouches[0].screenX;
+    }, { passive: true });
+
+    document.addEventListener('touchend', (e) => {
+      touchEndX = e.changedTouches[0].screenX;
+      handleSwipe();
+    }, { passive: true });
+
+    function handleSwipe() {
+      if (!isSlidesMode) return;
+      const swipeDistance = touchEndX - touchStartX;
+      if (swipeDistance < -50) {
+        nextSlide(); // Swiped left -> next
+      } else if (swipeDistance > 50) {
+        prevSlide(); // Swiped right -> prev
+      }
+    }
+
+    // Start on load
+    window.addEventListener('DOMContentLoaded', () => {
+      initIndicators();
+      renderSlides();
+    });
+  </script>
+</body>
+</html>
