@@ -1,0 +1,16 @@
+# Normalizar fins de linha entre Windows, macOS e Linux.
+# Sem isto, commits feitos em sistemas diferentes geram diffs inteiros
+# de ficheiro porque o CRLF do Windows vs LF do Unix conta como alteracao.
+* text=auto eol=lf
+
+# Ficheiros binarios: nunca aplicar conversao nem diff
+*.png binary
+*.jpg binary
+*.webp binary
+*.mp4 binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+
+# Lockfile: LF e obrigatorio (o pnpm valida)
+pnpm-lock.yaml text eol=lf
