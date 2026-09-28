@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent, type PointerEvent as ReactPointerEvent } from "react";
 import {
   Activity,
   ArrowDown,
@@ -441,6 +441,58 @@ export default function Home() {
   const [expandedProgram, setExpandedProgram] = useState(0);
   const [mediaFilter, setMediaFilter] = useState<MediaFilter>("todos");
 
+  // Arrasto do cartão de contacto: o utilizador reposiciona a caixa
+  // sem que ela volte a tapar as letras do titulo.
+  const [cardOffset, setCardOffset] = useState({ x: 0, y: 0 });
+  const [cardDragging, setCardDragging] = useState(false);
+  const dragOrigin = useRef({ pointerX: 0, pointerY: 0, x: 0, y: 0 });
+  const cardStageRef = useRef<HTMLDivElement>(null);
+
+  function clampCardOffset(x: number, y: number) {
+    const stage = cardStageRef.current;
+    if (!stage) return { x, y };
+    const bounds = stage.getBoundingClientRect();
+    const limitX = Math.max(0, (bounds.width - 320) / 2);
+    const limitY = Math.max(0, bounds.height - 120);
+    return {
+      x: Math.min(limitX, Math.max(-limitX, x)),
+      y: Math.min(limitY, Math.max(-limitY, y)),
+    };
+  }
+
+  function handleCardPointerDown(event: ReactPointerEvent<HTMLButtonElement>) {
+    if (event.button !== 0 && event.pointerType === "mouse") return;
+    dragOrigin.current = { pointerX: event.clientX, pointerY: event.clientY, x: cardOffset.x, y: cardOffset.y };
+    setCardDragging(true);
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }
+
+  function handleCardPointerMove(event: ReactPointerEvent<HTMLButtonElement>) {
+    if (!cardDragging) return;
+    const dx = event.clientX - dragOrigin.current.pointerX;
+    const dy = event.clientY - dragOrigin.current.pointerY;
+    setCardOffset(clampCardOffset(dragOrigin.current.x + dx, dragOrigin.current.y + dy));
+  }
+
+  function endCardDrag(event: ReactPointerEvent<HTMLButtonElement>) {
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+    setCardDragging(false);
+  }
+
+  function handleCardKeyDown(event: React.KeyboardEvent<HTMLButtonElement>) {
+    const step = event.shiftKey ? 32 : 12;
+    const moves: Record<string, [number, number]> = {
+      ArrowLeft: [-step, 0],
+      ArrowRight: [step, 0],
+      ArrowUp: [0, -step],
+      ArrowDown: [0, step],
+    };
+    const move = moves[event.key];
+    if (!move) return;
+    event.preventDefault();
+    setCardOffset((prev) => clampCardOffset(prev.x + move[0], prev.y + move[1]));
+  }
+
   const activeStage = stages.find((stage) => stage.id === selectedStage) ?? stages[0];
   const ActiveIcon = activeStage.icon;
   const filteredMedia = mediaFilter === "todos" ? resultMedia : resultMedia.filter((media) => media.category === mediaFilter);
@@ -500,12 +552,12 @@ export default function Home() {
 
       <header className="absolute left-0 right-0 top-9 z-40 px-4 py-5 sm:px-8 lg:px-12">
         <nav className="mx-auto flex max-w-[1400px] items-center justify-between">
-          <a href="#top" className="group flex items-center gap-3" aria-label="IA para Arquitetura, início">
+          <a href="#top" className="group flex items-center gap-3" aria-label="3DHR, início">
             <span className="grid h-9 w-9 place-items-center border border-[#f2efe6]/60 text-[#f2efe6] transition-colors group-hover:border-[#e96b3b] group-hover:text-[#e96b3b]">
               <span className="h-3 w-3 rotate-45 border border-current" />
             </span>
             <span className="font-display text-sm font-black uppercase tracking-[0.08em] text-[#f2efe6] sm:text-base">
-              IA<span className="text-[#e96b3b]">/</span>ARQ
+              3D<span className="text-[#e96b3b]">H</span>R
             </span>
           </a>
 
@@ -1050,10 +1102,27 @@ export default function Home() {
 
         <section id="inscricao" className="scroll-mt-10 bg-[#e96b3b] px-4 py-24 sm:px-8 sm:py-32 lg:px-12">
           <div className="mx-auto max-w-[1400px]">
-            <div className="grid gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:items-start">
-              <div><p className="section-kicker">09 / inscrição</p><h2 className="font-display mt-5 max-w-xl text-[clamp(3.6rem,8vw,7.5rem)] font-black uppercase leading-[0.8] tracking-[-0.08em]">faz parte<br /><span className="text-[#f2efe6]">do sistema.</span></h2><p className="mt-8 max-w-sm text-base leading-relaxed text-[#171715]/75">Conta-nos onde estás no teu processo e recebe a informação certa para entrares na próxima turma.</p><div className="mt-8 flex flex-wrap gap-3"><button type="button" onClick={() => scrollToId("programa")} className="button-dark group">ver cronograma <ArrowRight size={14} className="transition-transform duration-200 group-hover:translate-x-1" /></button><a href="#faq" className="button-ghost-dark group">ler perguntas <ArrowUpRight size={14} className="transition-transform duration-200 group-hover:-translate-y-1 group-hover:translate-x-1" /></a></div></div>
-              <div className="contact-card">
-                <div className="flex items-start justify-between gap-5"><div><p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[#171715]/55">pedido de informação / 2026</p><h3 className="font-display mt-4 text-3xl font-bold uppercase leading-[0.9] tracking-[-0.04em] sm:text-4xl">vamos começar<br />pela tua pergunta.</h3></div><span className="grid h-11 w-11 place-items-center rounded-full bg-[#171715] text-[#e96b3b]"><Send size={18} className="icon-active" /></span></div>
+            <div ref={cardStageRef} className="relative grid gap-12 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:items-start">
+              <div><p className="section-kicker">09 / inscrição</p><h2 className="font-display mt-5 max-w-[min(100%,11ch)] break-words text-[clamp(2.6rem,6vw,5.4rem)] font-black uppercase leading-[0.82] tracking-[-0.06em]">faz parte<br /><span className="text-[#f2efe6]">do sistema.</span></h2><p className="mt-8 max-w-sm text-base leading-relaxed text-[#171715]/75">Conta-nos onde estás no teu processo e recebe a informação certa para entrares na próxima turma.</p><div className="mt-8 flex flex-wrap gap-3"><button type="button" onClick={() => scrollToId("programa")} className="button-dark group">ver cronograma <ArrowRight size={14} className="transition-transform duration-200 group-hover:translate-x-1" /></button><a href="#faq" className="button-ghost-dark group">ler perguntas <ArrowUpRight size={14} className="transition-transform duration-200 group-hover:-translate-y-1 group-hover:translate-x-1" /></a></div></div>
+              <div
+                className={`contact-card lg:relative lg:z-10 ${cardDragging ? "is-dragging" : ""}`}
+                style={{ transform: `translate3d(${cardOffset.x}px, ${cardOffset.y}px, 0)` }}
+              >
+                <div className="flex items-start justify-between gap-5">
+                  <div><p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[#171715]/55">pedido de informação / 2026</p><h3 className="font-display mt-4 text-3xl font-bold uppercase leading-[0.9] tracking-[-0.04em] sm:text-4xl">vamos começar<br />pela tua pergunta.</h3></div>
+                  <button
+                    type="button"
+                    className="contact-drag-handle shrink-0"
+                    aria-label="Mover a caixa do formulário. Usa as setas do teclado, com Shift para passos maiores."
+                    onPointerDown={handleCardPointerDown}
+                    onPointerMove={handleCardPointerMove}
+                    onPointerUp={endCardDrag}
+                    onPointerCancel={endCardDrag}
+                    onKeyDown={handleCardKeyDown}
+                  >
+                    <span className="contact-drag-grip" aria-hidden="true"><span /><span /><span /></span>
+                  </button>
+                </div>
                 {formSubmitted && <div className="form-success" role="status"><span className="grid h-8 w-8 place-items-center rounded-full bg-[#b6c9bb] text-[#171715]"><CircleCheck size={16} className="icon-pulse" /></span><span><strong>Pedido recebido.</strong><small>Enviámos os próximos passos. Até já.</small></span></div>}
                 <form onSubmit={handleSubmit} className="mt-9 space-y-5" noValidate>
                   <div className="grid gap-5 sm:grid-cols-2"><div><input aria-label="Nome" name="name" value={formValues.name} onChange={(event) => handleFieldChange("name", event.target.value)} placeholder="o teu nome" className={`contact-input ${formErrors.name ? "contact-input-error" : formValues.name ? "contact-input-valid" : ""}`} />{formErrors.name && <p className="field-error">{formErrors.name}</p>}</div><div><input aria-label="Email" name="email" type="email" value={formValues.email} onChange={(event) => handleFieldChange("email", event.target.value)} placeholder="o-teu@email.com" className={`contact-input ${formErrors.email ? "contact-input-error" : formValues.email ? "contact-input-valid" : ""}`} />{formErrors.email && <p className="field-error">{formErrors.email}</p>}</div></div>
@@ -1061,6 +1130,11 @@ export default function Home() {
                   <div><textarea aria-label="Mensagem" name="message" rows={3} value={formValues.message} onChange={(event) => handleFieldChange("message", event.target.value)} placeholder="o que queres explorar? (opcional)" className={`contact-input resize-none ${formErrors.message ? "contact-input-error" : formValues.message ? "contact-input-valid" : ""}`} />{formErrors.message && <p className="field-error">{formErrors.message}</p>}</div>
                   <div className="flex flex-col gap-4 border-t border-[#171715]/20 pt-5 sm:flex-row sm:items-center sm:justify-between"><span className="flex items-center gap-2 font-mono text-[9px] uppercase tracking-[0.12em] text-[#171715]/55"><Check size={13} /> resposta em 24h úteis</span><button type="submit" className="submit-cta group">enviar pedido <Send size={15} className="transition-transform duration-200 group-hover:translate-x-1 group-hover:-translate-y-1" /></button></div>
                 </form>
+                {(cardOffset.x !== 0 || cardOffset.y !== 0) && (
+                  <button type="button" className="contact-reset" onClick={() => { setCardOffset({ x: 0, y: 0 }); setCardDragging(false); }}>
+                    <RefreshCw size={11} /> repor posição
+                  </button>
+                )}
               </div>
             </div>
             <div className="mt-20 grid gap-5 border-t border-[#171715]/25 pt-5 font-mono text-[10px] uppercase tracking-[0.14em] sm:grid-cols-3"><div className="flex items-center gap-3"><CalendarDays size={15} className="icon-active" /> sessão 1 · sáb 17 out · sessão 2 · dom 18 out</div><div className="flex items-center gap-3"><Clock3 size={15} className="icon-active" /> 10:00—13:00 WET · 3 h cada</div><div className="flex items-center gap-3"><MapPin size={15} className="icon-active" /> online ao vivo · 6 a 8 lugares</div></div>
@@ -1069,7 +1143,7 @@ export default function Home() {
       </main>
 
       <footer className="bg-[#171715] px-4 py-8 text-[#f2efe6] sm:px-8 lg:px-12">
-        <div className="mx-auto flex max-w-[1400px] flex-col justify-between gap-8 sm:flex-row sm:items-end"><div><a href="#top" className="font-display text-2xl font-black uppercase tracking-[-0.04em]">IA<span className="text-[#e96b3b]">/</span>ARQ</a><p className="mt-2 font-mono text-[9px] uppercase tracking-[0.13em] text-[#f2efe6]/40">um workshop para arquitetos que não esperam pelo futuro.</p></div><div className="flex items-center gap-6 font-mono text-[10px] uppercase tracking-[0.12em] text-[#f2efe6]/55"><a href="#processo" className="transition-colors hover:text-[#e96b3b]">Processo</a><a href="#faq" className="transition-colors hover:text-[#e96b3b]">FAQ</a><span>© 2026</span></div></div>
+        <div className="mx-auto flex max-w-[1400px] flex-col justify-between gap-8 sm:flex-row sm:items-end"><div><a href="#top" className="font-display text-2xl font-black uppercase tracking-[-0.04em]">3D<span className="text-[#e96b3b]">H</span>R</a><p className="mt-2 font-mono text-[9px] uppercase tracking-[0.13em] text-[#f2efe6]/40">um workshop para arquitetos que não esperam pelo futuro.</p></div><div className="flex items-center gap-6 font-mono text-[10px] uppercase tracking-[0.12em] text-[#f2efe6]/55"><a href="#processo" className="transition-colors hover:text-[#e96b3b]">Processo</a><a href="#faq" className="transition-colors hover:text-[#e96b3b]">FAQ</a><span>© 2026</span></div></div>
       </footer>
       <a href="#inscricao" className="floating-enroll group"><span className="floating-enroll-dot" /><span>inscrever agora</span><ArrowUpRight size={15} className="transition-transform duration-200 group-hover:-translate-y-1 group-hover:translate-x-1" /></a>
     </div>

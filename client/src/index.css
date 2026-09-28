@@ -122,7 +122,15 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
   .button-dark:hover, .submit-cta:hover { background: #2a2924; transform: translateY(-3px); }
   .button-ghost-dark { border: 1px solid rgba(23, 23, 21, 0.45); color: #171715; }
   .button-ghost-dark:hover { border-color: #171715; background: rgba(23, 23, 21, 0.08); transform: translateY(-3px); }
-  .contact-card { background: #f2efe6; padding: 1.25rem; color: #171715; box-shadow: 16px 16px 0 rgba(23, 23, 21, 0.17); }
+  .contact-card { position: relative; background: #f2efe6; padding: 1.25rem; color: #171715; box-shadow: 16px 16px 0 rgba(23, 23, 21, 0.17); transition: box-shadow 180ms cubic-bezier(0.23, 1, 0.32, 1); }
+.contact-card.is-dragging { box-shadow: 26px 26px 0 rgba(23, 23, 21, 0.24); }
+.contact-drag-handle { cursor: grab; touch-action: none; -webkit-user-select: none; user-select: none; }
+.contact-drag-handle:active { cursor: grabbing; }
+.contact-drag-handle:focus-visible { outline: 2px solid #e96b3b; outline-offset: 3px; }
+.contact-drag-grip { display: inline-flex; gap: 3px; }
+.contact-drag-grip span { display: block; height: 12px; width: 2px; background: rgba(23, 23, 21, 0.28); }
+.contact-reset { position: absolute; right: 0.6rem; bottom: 0.6rem; display: inline-flex; align-items: center; gap: 0.35rem; border: 1px solid rgba(23, 23, 21, 0.18); background: #f2efe6; padding: 0.3rem 0.5rem; color: rgba(23, 23, 21, 0.6); font-family: "IBM Plex Mono", monospace; font-size: 9px; font-weight: 600; letter-spacing: 0.12em; line-height: 1; text-transform: uppercase; transition: border-color 160ms ease-out, color 160ms ease-out; }
+.contact-reset:hover { border-color: #e96b3b; color: #e96b3b; }
   .contact-input { width: 100%; border: 0; border-bottom: 1px solid rgba(23, 23, 21, 0.3); background: transparent; padding: 0.8rem 0; font-family: "IBM Plex Mono", monospace; font-size: 11px; outline: none; transition: border-color 180ms ease-out, color 180ms ease-out; }
   .contact-input:focus { border-color: #e96b3b; }
   .contact-input::placeholder { color: rgba(23, 23, 21, 0.45); }
