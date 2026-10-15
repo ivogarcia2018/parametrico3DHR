@@ -42,14 +42,22 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-    <!-- Analytics é opcional: o loader só corre quando as duas variáveis existem.
-         Um placeholder não substituído ainda contém "%", por isso é ignorado. -->
+    <!-- Analytics é opcional: o loader só corre quando as duas variáveis formam um
+         par utilizável. São ignorados tanto um placeholder não substituído (ainda
+         contém "%") como qualquer valor que não seja um URL absoluto http(s) — é o
+         que permite deixar as variáveis com um valor de enchimento no painel da
+         Hostinger, que exige um valor para as chaves que deteta, sem que o browser
+         chegue a pedir nada. -->
     <script>
       (function () {
         var endpoint = "%VITE_ANALYTICS_ENDPOINT%";
         var websiteId = "%VITE_ANALYTICS_WEBSITE_ID%";
 
-        if (!endpoint || endpoint.indexOf("%") !== -1 || !websiteId || websiteId.indexOf("%") !== -1) {
+        if (
+          !/^https?:\/\//i.test(endpoint) ||
+          !websiteId ||
+          websiteId.indexOf("%") !== -1
+        ) {
           return;
         }
 
