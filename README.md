@@ -266,6 +266,7 @@ analytics só é injetado quando `VITE_ANALYTICS_ENDPOINT` e
 client/             frontend (Vite root): index.html, src/, public/media/
 client/src/content/ texto da página editado no browser (copy.json)
 server/index.ts     servidor Express que serve dist/public
+server.js           entry file do preset Express da Hostinger (carrega dist/index.js)
 shared/             constantes partilhadas
 media/              material original (imagens/vídeos) — não servido
 patches/            patch do wouter (ver "Versões e configuração do pnpm")
@@ -273,16 +274,23 @@ patches/            patch do wouter (ver "Versões e configuração do pnpm")
 
 ## Versões e configuração do pnpm
 
-O gestor de pacotes está fixado em `packageManager`
-(`pnpm@10.15.1` + hash de integridade). O pnpm 10 lê essa entrada e muda
-automaticamente para essa versão, pelo que `pnpm` corre sempre a mesma versão,
-independentemente da versão instalada globalmente.
+O campo `packageManager` foi **removido**. Estava fixado em `pnpm@10.15.1` + hash
+de integridade; o pnpm 10 mudava de versão sozinho por causa dele, mas o pnpm 11
+**recusa correr** quando a versão instalada não coincide com o campo — foi isso
+que fez falhar o primeiro build na Hostinger, que corre o pnpm 11.24.0:
+
+> This project is configured to use 10.15.1 of pnpm. Your current pnpm is v11.24.0
+
+Sem o campo, cada ambiente usa a sua própria versão do pnpm e todas leem as
+mesmas definições do `pnpm-workspace.yaml`. Não voltar a acrescentar o campo.
 
 Todas as definições vivem em `pnpm-workspace.yaml`:
 
 - `patchedDependencies` → aplica `patches/wouter@3.7.1.patch` (expõe os caminhos
   das rotas em `window.__WOUTER_ROUTES__`, um hook do Manus — o site não o usa).
 - `overrides` → `tailwindcss>nanoid: 3.3.7`.
+- `allowBuilds` → `false` para o esbuild e o `@tailwindcss/oxide` (o binário nativo
+  vem via optionalDependencies; o pnpm 11 exige esta entrada ou falha o install).
 
 O campo `pnpm` do `package.json` foi **removido**: está deprecado (as definições
 passaram para o `pnpm-workspace.yaml` a partir do pnpm 10.9) e fazia o pnpm
@@ -329,6 +337,11 @@ Mantém o servidor `server/index.ts`, que serve o build e responde com o
 O `pnpm build` produz `dist/index.js` (servidor) e `dist/public/` (cliente), que
 é exactamente onde o `resolveStaticPath()` do servidor os procura.
 
+Se o campo *Entry file* ficar no default `server.js`, também funciona: o
+`server.js` da raiz apenas carrega o bundle compilado (`import "./dist/index.js"`),
+para o preset Express arrancar sem mexer no hPanel. Em alternativa, aponta o
+*Entry file* directamente para `dist/index.js`.
+
 ### Opção B — Vite estático
 
 Não corre nenhum processo Node: a Hostinger serve os ficheiros. Mais leve e mais
@@ -372,6 +385,7 @@ O `vite.config.ts` não define `base`, pelo que o site assume a raiz do domínio
 | Sintoma | Causa | Resolução |
 | --- | --- | --- |
 | Bloco vermelho do pnpm em PowerShell | aviso do campo `pnpm` deprecado | já resolvido — não voltar a acrescentar o campo ao `package.json` |
+| Build falha com `This project is configured to use 10.15.1 of pnpm` | o campo `packageManager` fixava uma versão diferente da do servidor | já resolvido — o campo foi removido; ver "Versões e configuração do pnpm" |
 | `Port 3000 is in use, trying another one...` → Vite em `http://localhost:3001` | já há um Vite a correr | usa o URL que o Vite imprime (3001) ou fecha o servidor antigo; a porta 3000 fica sem ninguém |
 | `ERR_CONNECTION_REFUSED` / `Failed to Load Page` em `localhost:3000` | nenhum servidor a correr (não há ficheiro estático a abrir) | `pnpm dev` e deixar o terminal aberto — ver "Como abrir o site" |
 | `ELIFECYCLE Command failed with exit code 4294967295` | o processo foi terminado (Ctrl+C ou outra ferramenta matou o node) | não é erro de código: volta a arrancar |

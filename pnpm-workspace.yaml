@@ -1,7 +1,7 @@
-# Definições do pnpm. A PARTIR DO pnpm 10.9 (estamos no 10.15.1 via packageManager)
-# este ficheiro é a ÚNICA fonte: o campo "pnpm" do package.json está deprecado e
-# fazia o pnpm imprimir um aviso em cada comando (que a PowerShell mostrava a
-# vermelho, como se fosse um erro).
+# Definições do pnpm (v11). Este ficheiro é a única fonte de configuração: o campo
+# "pnpm" do package.json e o .npmrc (fora auth/registry) já não são lidos. O campo
+# "packageManager" foi removido de propósito — ver README "Versões e configuração
+# do pnpm".
 #
 # packages: o projeto é a raiz (a pasta single-package).
 packages:
@@ -10,3 +10,10 @@ patchedDependencies:
   wouter@3.7.1: patches/wouter@3.7.1.patch
 overrides:
   tailwindcss>nanoid: 3.3.7
+# Build scripts de pacotes nativos. O esbuild e o @tailwindcss/oxide trazem o
+# binário já compilado via optionalDependencies (@esbuild/*, @tailwindcss/oxide-*),
+# pelo que o script de instalação é redundante. `false` evita correr código
+# arbitrário e funciona em CI/Hostinger.
+allowBuilds:
+  '@tailwindcss/oxide': false
+  esbuild: false
