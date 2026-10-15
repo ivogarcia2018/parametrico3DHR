@@ -408,9 +408,11 @@ corrigiram-se por `overrides` as versões vulneráveis que vinham do `express`
 `nanoid`, `source-map-js`, `picomatch`, `baseline-browser-mapping`, `rollup`,
 `esbuild`).
 
-Foram também removidas quatro dependências mortas, nenhuma importada em lado
-nenhum: `axios`, `streamdown`, `nanoid` e `pnpm` (devDependency). Só o `pnpm` e o
-`streamdown` valiam dezenas de avisos no painel.
+Foram também removidas cinco dependências mortas, nenhuma importada em lado
+nenhum: `axios`, `streamdown`, `nanoid`, `pnpm` e `@tailwindcss/typography`. Só o
+`pnpm`, o `streamdown` e o `@tailwindcss/typography` valiam dezenas de avisos no
+painel — e o bundle do cliente saiu com o **mesmo hash** depois de os tirar, o que
+confirma que nada disto era usado.
 
 O `app.set("trust proxy", 1)` em `server/index.ts` é deliberado: confia apenas no
 proxy imediato, por isso um `X-Forwarded-For` forjado pelo visitante é ignorado.
