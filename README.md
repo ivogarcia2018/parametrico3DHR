@@ -285,19 +285,17 @@ node scripts/check-smtp.mjs
 Se terminar com «o servidor aceitou a mensagem» e o email não aparecer na caixa,
 o problema é de entrega (spam / DKIM), não de envio.
 
-Para ver o que o servidor vê **no ar**, abre
-`https://parametrico-ia.3dhr.pt/api/estado`. Diz se está `configurado`, os
-valores não-secretos (`smtp_host`, `smtp_port`, `smtp_user`), se a password está
-«definida», o `destino` e os **nomes** das variáveis que chegaram ao processo
-(`env_relevante`) — nunca valores. O mesmo resumo sai no log, na linha `[email]`.
+O log do arranque traz uma linha `[email]` com o resumo do que o servidor vê:
+`configurado`, os valores não-secretos (`smtp_host`, `smtp_port`, `smtp_user`), se
+a password está «definida», o `destino` e os **nomes** das variáveis que chegaram
+ao processo (`env_relevante`) — nunca valores.
 
 É a primeira coisa a olhar quando o formulário mostra «Falta configurar o envio
 de email»: separa «a variável não foi guardada» de «não chegou ao runtime».
 
-Em 2026-10-15 este endpoint expôs também o `cwd`, o `dirname`, os candidatos a
-`.env` e a listagem da raiz — foi o que localizou o problema. Esses campos foram
-removidos quando o envio passou a funcionar, para não publicar caminhos do
-servidor.
+Houve também um `GET /api/estado` que publicava este resumo no browser. Foi o que
+localizou o problema em 2026-10-15 (chegou a expor o `cwd`, os candidatos a `.env`
+e a listagem da raiz) e foi removido quando deixou de ser preciso.
 
 ### Autenticação de email (para os pedidos não caírem em spam)
 
@@ -463,8 +461,9 @@ Environment variables**), no **mesmo sítio** das `MANUS_RUNTIME` e
 guardar não chega: as variáveis só entram quando a app arranca outra vez.
 
 A Hostinger **injecta-as directamente no processo** e **não escreve nenhum `.env`**
-no servidor (confirmado em 2026-10-15 com o `/api/estado`). O servidor também sabe
-ler um `.env` da raiz, via `process.loadEnvFile`, para o `pnpm dev` local.
+no servidor (confirmado em 2026-10-15 pela linha `[email]` do arranque). O servidor
+também sabe ler um `.env` da raiz, via `process.loadEnvFile`, para o `pnpm dev`
+local.
 
 As variáveis `VITE_ANALYTICS_*` são opcionais: sem elas o `index.html` fica com
 os marcadores `%VITE_...%` e o script de analytics não é injetado (o próprio
@@ -482,7 +481,7 @@ O `vite.config.ts` não define `base`, pelo que o site assume a raiz do domínio
 | Bloco vermelho do pnpm em PowerShell | aviso do campo `pnpm` deprecado | já resolvido — não voltar a acrescentar o campo ao `package.json` |
 | Build falha com `This project is configured to use 10.15.1 of pnpm` | o campo `packageManager` fixava uma versão diferente da do servidor | já resolvido — o campo foi removido; ver "Versões e configuração do pnpm" |
 | Formulário: «nada acontece» ao enviar | `mailto:` sem cliente de email associado no browser | configurar as `SMTP_*` — ver «Contacto e inscrições» |
-| Formulário: aviso «Falta configurar o envio de email» | faltam as `SMTP_*` no hPanel | Websites → `parametrico-ia.3dhr.pt` → Environment variables; a lista tem de ter **7** entradas. Confirmar em `/api/estado` |
+| Formulário: aviso «Falta configurar o envio de email» | faltam as `SMTP_*` no hPanel | Websites → `parametrico-ia.3dhr.pt` → Environment variables; a lista tem de ter **7** entradas. Confirmar na linha `[email]` do log do deploy |
 | Formulário: aviso «O envio directo falhou» | as `SMTP_*` chegaram, mas o SMTP recusou | procurar `[pedido] falha ao enviar por SMTP` no log e conferir a password / a porta |
 | Formulário: aviso «Demasiados pedidos seguidos» | limite por IP (10 em 10 min) | normal ao repetir testes; esperar ou usar o `mailto:` que já abriu |
 | Formulário: aparece «Pedido enviado» mas o email não chega | é problema de **entrega**, não de envio | ver no log `[pedido] destinatario=… aceitou=[…]`; confirmar o **SPAM** da caixa. SPF ✓, DKIM `hostingermail1` ✓ e DMARC `p=none` — ver «Autenticação de email» |

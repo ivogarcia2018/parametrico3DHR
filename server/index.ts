@@ -144,13 +144,12 @@ function relevantEnvKeys(): string[] {
     .sort();
 }
 
-// Resumo do que o servidor ve, sem revelar a password. Vai para o log no
-// arranque e serve o GET /api/estado.
+// Resumo do que o servidor ve, sem revelar a password. Sai no log do arranque,
+// na linha `[email]` — e onde se percebe logo se as SMTP_* chegaram ao runtime.
 //
-// Chegou a expor `cwd`, `dirname`, os candidatos a `.env` e a listagem da raiz:
-// foi isso que localizou o problema em 2026-10-15 (a Hostinger injecta as
-// variaveis directamente e nao escreve `.env`). Removido quando o envio passou a
-// funcionar, para nao publicar caminhos do servidor.
+// Houve tambem um GET /api/estado que publicava isto no browser; foi removido em
+// 2026-10-15, quando deixou de ser preciso, por expor a configuracao do email a
+// quem soubesse o endereco.
 function emailStatus() {
   return {
     configurado: Boolean(createTransport()),
@@ -215,11 +214,6 @@ async function startServer() {
 
   console.log(`Serving client build from ${staticPath}`);
   console.log(`[email] ${JSON.stringify(emailStatus())}`);
-
-  // Diagnostico a partir do browser: /api/estado. Nao revela a password.
-  app.get("/api/estado", (_req, res) => {
-    res.json(emailStatus());
-  });
 
   // Fica antes do catch-all do SPA, que responde a qualquer GET com o index.html.
   app.post("/api/pedido", express.json({ limit: "32kb" }), async (req, res) => {
