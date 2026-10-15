@@ -271,6 +271,22 @@ node scripts/check-smtp.mjs
 Se terminar com «o servidor aceitou a mensagem» e o email não aparecer na caixa,
 o problema é de entrega (spam / DKIM), não de envio.
 
+### Autenticação de email (para os pedidos não caírem em spam)
+
+Verificado no DNS de `3dhr.pt` (nameservers `ns1/ns2.dns-parking.com`, ou seja, o
+DNS é gerido no hPanel):
+
+| Registo | Valor | Estado |
+| --- | --- | --- |
+| MX | `mx1` / `mx2.hostinger.com` | ✓ |
+| SPF | `v=spf1 include:_spf.mail.hostinger.com ~all` | ✓ |
+| DKIM | `hostingermail1._domainkey` | ✓ publicado (2026-10-15) |
+| DKIM | `hostingermail2._domainkey` | ✗ por publicar — só é preciso se o hPanel o listar |
+| DMARC | `v=DMARC1; p=none` | ✓ |
+
+Sem DKIM os emails saem sem assinatura e o Gmail/Outlook tendem a mandá-los para
+spam — vale a pena confirmar este quadro depois de mexer no email do domínio.
+
 O endereço está também visível como link `mailto:` no cartão de contacto
 («ou envia directamente para…») e no rodapé, para quem preferir escrever sem
 passar pelo formulário.
@@ -431,7 +447,7 @@ O `vite.config.ts` não define `base`, pelo que o site assume a raiz do domínio
 | Build falha com `This project is configured to use 10.15.1 of pnpm` | o campo `packageManager` fixava uma versão diferente da do servidor | já resolvido — o campo foi removido; ver "Versões e configuração do pnpm" |
 | Formulário: «nada acontece» ao enviar | `mailto:` sem cliente de email associado no browser | configurar as `SMTP_*` — ver «Contacto e inscrições» |
 | Formulário: aparece «Pedido preparado» em vez de «Pedido enviado» | faltam as `SMTP_*` no hPanel, ou o envio falhou | procurar `[pedido] falha ao enviar por SMTP` no log e conferir as credenciais |
-| Formulário: aparece «Pedido enviado» mas o email não chega | é problema de **entrega**, não de envio | ver no log `[pedido] destinatario=… aceitou=[…]`; confirmar o SPAM da caixa. O DKIM de `3dhr.pt` não está configurado (`hostingermail1/2._domainkey` sem registos) — o SPF está ✓ e o DMARC é `p=none`, por isso não há rejeição, mas sem DKIM a probabilidade de cair em spam sobe |
+| Formulário: aparece «Pedido enviado» mas o email não chega | é problema de **entrega**, não de envio | ver no log `[pedido] destinatario=… aceitou=[…]`; confirmar o **SPAM** da caixa. SPF ✓, DKIM `hostingermail1` ✓ e DMARC `p=none` — ver «Autenticação de email» |
 | `Port 3000 is in use, trying another one...` → Vite em `http://localhost:3001` | já há um Vite a correr | usa o URL que o Vite imprime (3001) ou fecha o servidor antigo; a porta 3000 fica sem ninguém |
 | `ERR_CONNECTION_REFUSED` / `Failed to Load Page` em `localhost:3000` | nenhum servidor a correr (não há ficheiro estático a abrir) | `pnpm dev` e deixar o terminal aberto — ver "Como abrir o site" |
 | `ELIFECYCLE Command failed with exit code 4294967295` | o processo foi terminado (Ctrl+C ou outra ferramenta matou o node) | não é erro de código: volta a arrancar |
