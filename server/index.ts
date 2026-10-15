@@ -203,7 +203,12 @@ async function startServer() {
 
   // Atras do proxy da Hostinger: sem isto o `req.ip` seria sempre o do proxy e o
   // limite por IP do formulario nao distinguia visitantes.
-  app.set("trust proxy", true);
+  //
+  // `1` (um salto) e deliberado: confia apenas no proxy imediato, por isso um
+  // `X-Forwarded-For` forjado pelo visitante e ignorado. Com `true` o Express
+  // confiaria em todos os saltos e escolheria o valor mais a esquerda — que e
+  // precisamente o que o visitante controla (ver CVE-2026-90711, no proxy-addr).
+  app.set("trust proxy", 1);
 
   const staticPath = resolveStaticPath();
 

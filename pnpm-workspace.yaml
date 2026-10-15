@@ -10,6 +10,20 @@ patchedDependencies:
   wouter@3.7.1: patches/wouter@3.7.1.patch
 overrides:
   tailwindcss>nanoid: 3.3.7
+  # Seguranca (2026-10-15) — versoes corrigidas. As tres primeiras estao no
+  # caminho de producao (vem do express, por isso correm no servidor a serio);
+  # as restantes so correm durante o build.
+  proxy-addr: ^2.0.8
+  path-to-regexp: ^0.1.13
+  qs: ^6.16.0
+  tar: ^7.5.21
+  browserslist: ^4.28.7
+  nanoid: ^3.3.18
+  source-map-js: ^1.2.2
+  picomatch: ^4.0.4
+  baseline-browser-mapping: ^2.11.0
+  rollup: ^4.59.0
+  esbuild: ^0.28.1
 # Build scripts de pacotes nativos. O esbuild e o @tailwindcss/oxide trazem o
 # binário já compilado via optionalDependencies (@esbuild/*, @tailwindcss/oxide-*),
 # pelo que o script de instalação é redundante. `false` evita correr código

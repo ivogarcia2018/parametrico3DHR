@@ -368,7 +368,8 @@ Todas as definições vivem em `pnpm-workspace.yaml`:
 
 - `patchedDependencies` → aplica `patches/wouter@3.7.1.patch` (expõe os caminhos
   das rotas em `window.__WOUTER_ROUTES__`, um hook do Manus — o site não o usa).
-- `overrides` → `tailwindcss>nanoid: 3.3.7`.
+- `overrides` → `tailwindcss>nanoid: 3.3.7` e as versões corrigidas por segurança
+  (ver «Dependências e segurança»).
 - `allowBuilds` → `false` para o esbuild e o `@tailwindcss/oxide` (o binário nativo
   vem via optionalDependencies; o pnpm 11 exige esta entrada ou falha o install).
 
@@ -388,6 +389,33 @@ Para confirmar que o patch continua ativo:
 ```powershell
 Select-String node_modules\wouter\esm\index.js -Pattern __WOUTER_ROUTES__
 ```
+
+## Dependências e segurança
+
+O painel **Security → Vulnerabilities** da Hostinger conta tudo o que está em
+`node_modules`, incluindo ferramentas que só correm no build (`vite`, `esbuild`,
+`postcss`, `rollup`, `tar`). Um número alto ali **não** significa que o site
+esteja exposto: o que um visitante executa é o bundle em `dist/public/`, e esse
+não contém nenhuma dessas ferramentas.
+
+**Não usar o «Auto-fix all» do painel.** Faz um `audit fix --force` que sobe
+pacotes de major (vite 7→8, etc.) e parte o build — e ignora os `overrides`
+deliberados deste repositório.
+
+O que corre no servidor é apenas `express` e `nodemailer`. Em 2026-10-15
+corrigiram-se por `overrides` as versões vulneráveis que vinham do `express`
+(`proxy-addr`, `path-to-regexp`, `qs`) e as de build (`tar`, `browserslist`,
+`nanoid`, `source-map-js`, `picomatch`, `baseline-browser-mapping`, `rollup`,
+`esbuild`).
+
+Foram também removidas quatro dependências mortas, nenhuma importada em lado
+nenhum: `axios`, `streamdown`, `nanoid` e `pnpm` (devDependency). Só o `pnpm` e o
+`streamdown` valiam dezenas de avisos no painel.
+
+O `app.set("trust proxy", 1)` em `server/index.ts` é deliberado: confia apenas no
+proxy imediato, por isso um `X-Forwarded-For` forjado pelo visitante é ignorado.
+Com `true`, o Express escolheria o valor mais à esquerda — precisamente o que o
+visitante controla (CVE-2026-90711, no `proxy-addr`).
 
 ## Deploy na Hostinger (via GitHub)
 
