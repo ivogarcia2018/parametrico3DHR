@@ -1,5 +1,5 @@
 import express from "express";
-import { existsSync } from "fs";
+import { existsSync, readdirSync } from "fs";
 import { createServer } from "http";
 import nodemailer from "nodemailer";
 import path from "path";
@@ -18,13 +18,18 @@ const __dirname = path.dirname(__filename);
  */
 let envFileLoaded: string | null = null;
 
-function loadEnvFile(): void {
-  const candidates = [
+// Os sitios onde o `.env` pode estar: a raiz de onde a app corre, a pasta acima
+// do bundle (dist/) e a propria pasta do bundle.
+function envCandidates(): string[] {
+  return [
     path.resolve(process.cwd(), ".env"),
     path.resolve(__dirname, "..", ".env"),
     path.resolve(__dirname, ".env"),
   ];
-  const found = candidates.find((candidate) => existsSync(candidate));
+}
+
+function loadEnvFile(): void {
+  const found = envCandidates().find((candidate) => existsSync(candidate));
   if (!found) return;
 
   try {
@@ -131,6 +136,25 @@ function formatAddresses(items: unknown[]): string {
     .join(", ");
 }
 
+// Nomes (nunca valores) das variaveis de configuracao presentes no processo.
+// Se nem o MANUS_RUNTIME nem as VITE_* aparecerem, a plataforma nao esta a
+// injectar o ambiente no runtime — e o problema nao e dos nomes das SMTP_*.
+function relevantEnvKeys(): string[] {
+  return Object.keys(process.env)
+    .filter((key) => /SMTP|MAIL|MANUS|VITE|PORT|ANALYTICS|NODE_ENV/.test(key))
+    .sort();
+}
+
+function rootEntries(): string[] {
+  try {
+    return readdirSync(process.cwd())
+      .filter((name) => name !== "node_modules")
+      .slice(0, 40);
+  } catch {
+    return [];
+  }
+}
+
 // Resumo do que o servidor ve, sem revelar a password. Vai para o log no
 // arranque e serve o GET /api/estado, para se diagnosticar pelo browser.
 function emailStatus() {
@@ -142,6 +166,16 @@ function emailStatus() {
     smtp_pass: process.env.SMTP_PASS ? "definida" : "(em falta)",
     destino: contactEmail(),
     env_file: envFileLoaded ? path.basename(envFileLoaded) : "(nao encontrado)",
+    // Onde procurar e o que existe, para localizar o .env no servidor.
+    cwd: process.cwd(),
+    dirname: __dirname,
+    env_candidatos: envCandidates().map((candidate) => ({
+      caminho: candidate,
+      existe: existsSync(candidate),
+    })),
+    raiz: rootEntries(),
+    port_env: process.env.PORT ?? "(em falta)",
+    env_relevante: relevantEnvKeys(),
   };
 }
 
