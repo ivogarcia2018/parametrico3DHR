@@ -87,6 +87,10 @@ function createTransport() {
       // 465 e SSL directo; 587/25 sobem por STARTTLS.
       secure: port === 465,
       auth: { user, pass },
+      // Sem timeouts, um SMTP inacessivel deixa o pedido pendurado minutos.
+      connectionTimeout: 10_000,
+      greetingTimeout: 10_000,
+      socketTimeout: 20_000,
     }),
   };
 }

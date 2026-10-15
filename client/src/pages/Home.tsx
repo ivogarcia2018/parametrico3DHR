@@ -555,6 +555,9 @@ export default function Home() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formValues),
+        // Se o SMTP estiver lento o visitante nao fica preso à espera: ao fim
+        // de 20 s caimos no recuo do `mailto:`.
+        signal: AbortSignal.timeout(20_000),
       });
       const isJson = (response.headers.get("content-type") ?? "").includes("application/json");
       const payload: { ok?: boolean; reason?: string } | null = isJson

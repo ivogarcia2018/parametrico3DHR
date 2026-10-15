@@ -258,6 +258,19 @@ Há três recuos, para o pedido nunca se perder:
 3. **`pnpm dev`** — só corre o Vite e não existe `/api/pedido`; a resposta não é
    JSON e o formulário recua para o `mailto:`.
 
+Para diagnosticar fora do deploy há `scripts/check-smtp.mjs`: verifica as
+credenciais e imprime a conversa com o servidor (a linha `AUTH` sai redigida, por
+isso o output pode ser partilhado). Lê as `SMTP_*` do ambiente ou do `.env`.
+
+```powershell
+$env:SMTP_HOST='smtp.hostinger.com'; $env:SMTP_PORT='587'
+$env:SMTP_USER='formacao@3dhr.pt';  $env:SMTP_PASS='<password da caixa>'
+node scripts/check-smtp.mjs
+```
+
+Se terminar com «o servidor aceitou a mensagem» e o email não aparecer na caixa,
+o problema é de entrega (spam / DKIM), não de envio.
+
 O endereço está também visível como link `mailto:` no cartão de contacto
 («ou envia directamente para…») e no rodapé, para quem preferir escrever sem
 passar pelo formulário.
