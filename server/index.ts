@@ -91,6 +91,14 @@ function createTransport() {
   };
 }
 
+// A resposta do servidor SMTP: `accepted` e `rejected` dizem o que aconteceu de
+// facto ao destinatário, mesmo quando `sendMail` resolve sem excepção.
+function formatAddresses(items: unknown[]): string {
+  return items
+    .map((item) => (typeof item === "string" ? item : (item as { address?: string }).address ?? String(item)))
+    .join(", ");
+}
+
 async function startServer() {
   const app = express();
   const server = createServer(app);
@@ -122,7 +130,7 @@ async function startServer() {
     const profile = PROFILE_LABELS[pedido.profile] ?? pedido.profile;
 
     try {
-      await smtp.transport.sendMail({
+      const info = await smtp.transport.sendMail({
         from: `"${fromName}" <${smtp.user}>`,
         to: contactEmail(),
         replyTo: `"${pedido.name}" <${pedido.email}>`,
@@ -134,7 +142,14 @@ async function startServer() {
           `Mensagem: ${pedido.message || "—"}`,
         ].join("\r\n"),
       });
-      console.log(`[pedido] enviado para ${contactEmail()} (${pedido.email})`);
+
+      // O que o servidor respondeu. `accepted` vazio ou `rejected` preenchido
+      // significa que o email nao seguiu, mesmo sem excepcao.
+      const accepted = formatAddresses(info.accepted ?? []);
+      const rejected = formatAddresses(info.rejected ?? []);
+      console.log(`[pedido] destinatario=${contactEmail()} aceitou=[${accepted || "—"}]${rejected ? ` recusou=[${rejected}]` : ""} resposta="${info.response ?? "sem resposta"}" id=${info.messageId ?? "—"}`);
+      if (rejected) console.warn(`[pedido] o servidor SMTP RECUSOU: ${rejected}`);
+
       res.json({ ok: true });
     } catch (error) {
       console.error("[pedido] falha ao enviar por SMTP:", error);

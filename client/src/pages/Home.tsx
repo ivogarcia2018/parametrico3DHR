@@ -525,10 +525,10 @@ export default function Home() {
   function openMailtoFallback(sendFailed: boolean) {
     window.location.href = buildMailtoLink(formValues);
     setFormOutcome("prepared");
-    toast.success("Pedido preparado.", {
-      description: sendFailed
-        ? `O envio directo falhou. Abrimos o teu email com o pedido endereçado a ${CONTACT_EMAIL} — confirma o envio.`
-        : `Abrimos o teu email com o pedido endereçado a ${CONTACT_EMAIL}. Confirma o envio.`,
+    // Aviso, nao sucesso: aqui o servidor nao enviou nada — quem tem de enviar
+    // e o visitante. Um toast verde fazia crer que o pedido ja tinha saido.
+    toast.warning(sendFailed ? "O envio directo falhou." : "Falta configurar o envio de email.", {
+      description: `Abrimos o teu email com o pedido endereçado a ${CONTACT_EMAIL} — confirma o envio.`,
     });
   }
 
