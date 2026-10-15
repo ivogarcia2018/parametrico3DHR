@@ -258,6 +258,20 @@ Há três recuos, para o pedido nunca se perder:
 3. **`pnpm dev`** — só corre o Vite e não existe `/api/pedido`; a resposta não é
    JSON e o formulário recua para o `mailto:`.
 
+### Anti-spam
+
+O `mailto:` antigo não tinha risco nenhum; agora que é o servidor que envia,
+`/api/pedido` é um envio de email aberto a quem o descubra. Duas defesas:
+
+- **Campo isca** (`contact_extra`) — invisível e fora do percurso do teclado. Só
+  os bots o preenchem; quando vem preenchido, o servidor responde `200 {ok:true}`
+  **sem enviar nada**, para não lhes dar sinal.
+- **Limite por IP** — 10 pedidos por 10 minutos. Acima disso responde `429` e o
+  formulário recua para o `mailto:`, por isso o visitante nunca perde o pedido.
+
+O `app.set("trust proxy", true)` é o que faz o `req.ip` ser o do visitante em vez
+do proxy da Hostinger — sem ele o limite seria partilhado por todos.
+
 Para diagnosticar fora do deploy há `scripts/check-smtp.mjs`: verifica as
 credenciais e imprime a conversa com o servidor (a linha `AUTH` sai redigida, por
 isso o output pode ser partilhado). Lê as `SMTP_*` do ambiente ou do `.env`.
@@ -470,6 +484,7 @@ O `vite.config.ts` não define `base`, pelo que o site assume a raiz do domínio
 | Formulário: «nada acontece» ao enviar | `mailto:` sem cliente de email associado no browser | configurar as `SMTP_*` — ver «Contacto e inscrições» |
 | Formulário: aviso «Falta configurar o envio de email» | faltam as `SMTP_*` no hPanel | Websites → `parametrico-ia.3dhr.pt` → Environment variables; a lista tem de ter **7** entradas. Confirmar em `/api/estado` |
 | Formulário: aviso «O envio directo falhou» | as `SMTP_*` chegaram, mas o SMTP recusou | procurar `[pedido] falha ao enviar por SMTP` no log e conferir a password / a porta |
+| Formulário: aviso «Demasiados pedidos seguidos» | limite por IP (10 em 10 min) | normal ao repetir testes; esperar ou usar o `mailto:` que já abriu |
 | Formulário: aparece «Pedido enviado» mas o email não chega | é problema de **entrega**, não de envio | ver no log `[pedido] destinatario=… aceitou=[…]`; confirmar o **SPAM** da caixa. SPF ✓, DKIM `hostingermail1` ✓ e DMARC `p=none` — ver «Autenticação de email» |
 | `Port 3000 is in use, trying another one...` → Vite em `http://localhost:3001` | já há um Vite a correr | usa o URL que o Vite imprime (3001) ou fecha o servidor antigo; a porta 3000 fica sem ninguém |
 | `ERR_CONNECTION_REFUSED` / `Failed to Load Page` em `localhost:3000` | nenhum servidor a correr (não há ficheiro estático a abrir) | `pnpm dev` e deixar o terminal aberto — ver "Como abrir o site" |

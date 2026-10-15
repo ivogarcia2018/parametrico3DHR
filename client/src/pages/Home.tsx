@@ -431,6 +431,8 @@ export default function Home() {
   const [formErrors, setFormErrors] = useState<FormErrors>({});
   const [formOutcome, setFormOutcome] = useState<"sent" | "prepared" | null>(null);
   const [formSending, setFormSending] = useState(false);
+  // Isca anti-spam: invisível para humanos, apetecível para bots.
+  const [formTrap, setFormTrap] = useState("");
   const [expandedProgram, setExpandedProgram] = useState(0);
   // Rotação das imagens 3D na evidência do estágio IMAGEM (04).
   const [proofIndex, setProofIndex] = useState(0);
@@ -522,12 +524,18 @@ export default function Home() {
   // Recuo: abre o cliente de email do visitante com o pedido já escrito. Usa-se
   // quando o servidor não tem SMTP configurado, quando o envio falha e também em
   // `pnpm dev`, onde só corre o Vite e não existe `/api/pedido`.
-  function openMailtoFallback(sendFailed: boolean) {
+  function openMailtoFallback(reason?: string) {
     window.location.href = buildMailtoLink(formValues);
     setFormOutcome("prepared");
     // Aviso, nao sucesso: aqui o servidor nao enviou nada — quem tem de enviar
     // e o visitante. Um toast verde fazia crer que o pedido ja tinha saido.
-    toast.warning(sendFailed ? "O envio directo falhou." : "Falta configurar o envio de email.", {
+    const titulo =
+      reason === "send-failed"
+        ? "O envio directo falhou."
+        : reason === "too-many-requests"
+          ? "Demasiados pedidos seguidos."
+          : "Falta configurar o envio de email.";
+    toast.warning(titulo, {
       description: `Abrimos o teu email com o pedido endereçado a ${CONTACT_EMAIL} — confirma o envio.`,
     });
   }
@@ -554,7 +562,7 @@ export default function Home() {
       const response = await fetch("/api/pedido", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formValues),
+        body: JSON.stringify({ ...formValues, contact_extra: formTrap }),
         // Se o SMTP estiver lento o visitante nao fica preso à espera: ao fim
         // de 20 s caimos no recuo do `mailto:`.
         signal: AbortSignal.timeout(20_000),
@@ -572,9 +580,9 @@ export default function Home() {
         return;
       }
 
-      openMailtoFallback(payload?.reason === "send-failed");
+      openMailtoFallback(payload?.reason);
     } catch {
-      openMailtoFallback(true);
+      openMailtoFallback("network");
     } finally {
       setFormSending(false);
     }
@@ -1076,6 +1084,19 @@ export default function Home() {
                 </div>
                 {formOutcome && <div data-copy-transient className="form-success" role="status"><span className="grid h-8 w-8 place-items-center rounded-full bg-[#b6c9bb] text-[#171715]"><CircleCheck size={16} className="icon-pulse" /></span><span>{formOutcome === "sent" ? <><strong>Pedido enviado.</strong><small>Recebemos o teu pedido — respondemos para o teu email em 24h úteis.</small></> : <><strong>Pedido preparado.</strong><small>Confirma o envio para {CONTACT_EMAIL} — abrimos o teu email com tudo preenchido.</small></>}</span></div>}
                 <form onSubmit={handleSubmit} className="mt-9 space-y-5" noValidate>
+                  {/* Isca anti-spam: fora do ecrã e fora do percurso do teclado. Um
+                      humano nunca a vê nem a preenche; um bot que preencha todos os
+                      campos denuncia-se e o servidor descarta o pedido em silêncio. */}
+                  <input
+                    type="text"
+                    name="contact_extra"
+                    value={formTrap}
+                    onChange={(event) => setFormTrap(event.target.value)}
+                    tabIndex={-1}
+                    autoComplete="off"
+                    aria-hidden="true"
+                    style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0, pointerEvents: "none" }}
+                  />
                   <div className="grid gap-5 sm:grid-cols-2"><div><input aria-label="Nome" name="name" value={formValues.name} onChange={(event) => handleFieldChange("name", event.target.value)} placeholder="o teu nome" className={`contact-input ${formErrors.name ? "contact-input-error" : formValues.name ? "contact-input-valid" : ""}`} />{formErrors.name && <p className="field-error">{formErrors.name}</p>}</div><div><input aria-label="Email" name="email" type="email" value={formValues.email} onChange={(event) => handleFieldChange("email", event.target.value)} placeholder="o-teu@email.com" className={`contact-input ${formErrors.email ? "contact-input-error" : formValues.email ? "contact-input-valid" : ""}`} />{formErrors.email && <p className="field-error">{formErrors.email}</p>}</div></div>
                   <div><select aria-label="Perfil" name="profile" value={formValues.profile} onChange={(event) => handleFieldChange("profile", event.target.value)} className={`contact-input ${formErrors.profile ? "contact-input-error" : "contact-input-valid"}`}><option value="">escolhe o teu perfil</option><option value="arquitetura">sou arquiteto/a</option><option value="estudante">sou estudante</option><option value="equipa">represento uma equipa</option><option value="outro">outro perfil</option></select>{formErrors.profile && <p className="field-error">{formErrors.profile}</p>}</div>
                   <div><textarea aria-label="Mensagem" name="message" rows={3} value={formValues.message} onChange={(event) => handleFieldChange("message", event.target.value)} placeholder="Tenho uma questão. (opcional)" className={`contact-input resize-none ${formErrors.message ? "contact-input-error" : formValues.message ? "contact-input-valid" : ""}`} />{formErrors.message && <p className="field-error">{formErrors.message}</p>}</div>

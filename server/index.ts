@@ -164,11 +164,47 @@ function emailStatus() {
   };
 }
 
+// Anti-spam do formulario. O `mailto:` antigo nao tinha risco nenhum; agora que
+// e o servidor que envia, `/api/pedido` e um envio de email aberto a quem o
+// descubra. Duas defesas simples: um campo isca e um limite por IP.
+const HONEYPOT_FIELD = "contact_extra";
+const RATE_LIMIT_JANELA = 10 * 60 * 1000;
+const RATE_LIMIT_MAXIMO = 10;
+const enviosPorIp = new Map<string, number[]>();
+
+function excedeuLimite(ip: string): boolean {
+  const agora = Date.now();
+  const recentes = (enviosPorIp.get(ip) ?? []).filter((marca) => agora - marca < RATE_LIMIT_JANELA);
+
+  if (recentes.length >= RATE_LIMIT_MAXIMO) {
+    enviosPorIp.set(ip, recentes);
+    return true;
+  }
+
+  recentes.push(agora);
+  enviosPorIp.set(ip, recentes);
+
+  // Poda ocasional, para o mapa nao crescer sem fim. `forEach` (em vez de
+  // `for...of`) porque o tsconfig nao define `target` e a iteracao de Map
+  // exigiria `downlevelIteration`.
+  if (enviosPorIp.size > 500) {
+    enviosPorIp.forEach((marcas, chave) => {
+      if (marcas.every((marca) => agora - marca >= RATE_LIMIT_JANELA)) enviosPorIp.delete(chave);
+    });
+  }
+
+  return false;
+}
+
 async function startServer() {
   loadEnvFile();
 
   const app = express();
   const server = createServer(app);
+
+  // Atras do proxy da Hostinger: sem isto o `req.ip` seria sempre o do proxy e o
+  // limite por IP do formulario nao distinguia visitantes.
+  app.set("trust proxy", true);
 
   const staticPath = resolveStaticPath();
 
@@ -187,6 +223,21 @@ async function startServer() {
 
   // Fica antes do catch-all do SPA, que responde a qualquer GET com o index.html.
   app.post("/api/pedido", express.json({ limit: "32kb" }), async (req, res) => {
+    // Isca: so os bots a preenchem. Respondemos "ok" para nao lhes dar sinal.
+    const isca = String((req.body as Record<string, unknown>)?.[HONEYPOT_FIELD] ?? "").trim();
+    if (isca) {
+      console.warn("[pedido] descartado: campo isca preenchido");
+      res.json({ ok: true });
+      return;
+    }
+
+    const ip = req.ip ?? "desconhecido";
+    if (excedeuLimite(ip)) {
+      console.warn(`[pedido] descartado: limite por IP excedido (${ip})`);
+      res.status(429).json({ ok: false, reason: "too-many-requests" });
+      return;
+    }
+
     const { pedido, errors } = readPedido(req.body);
     if (!pedido) {
       res.status(400).json({ ok: false, errors });
