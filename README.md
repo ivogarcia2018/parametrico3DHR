@@ -271,6 +271,12 @@ node scripts/check-smtp.mjs
 Se terminar com «o servidor aceitou a mensagem» e o email não aparecer na caixa,
 o problema é de entrega (spam / DKIM), não de envio.
 
+Para ver o que o servidor vê **no ar**, abre
+`https://parametrico-ia.3dhr.pt/api/estado`. Responde com `configurado`,
+`smtp_host`, `smtp_port`, `smtp_user`, `smtp_pass` (apenas «definida» / «em
+falta»), `destino` e `env_file` — sem revelar a password. O mesmo resumo sai no
+log do deploy, na linha `[email]`.
+
 ### Autenticação de email (para os pedidos não caírem em spam)
 
 Verificado no DNS de `3dhr.pt` (nameservers `ns1/ns2.dns-parking.com`, ou seja, o

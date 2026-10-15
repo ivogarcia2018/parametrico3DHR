@@ -16,6 +16,8 @@ const __dirname = path.dirname(__filename);
  * `process.loadEnvFile` (Node 20.12+) cobre os dois casos e nao falha quando o
  * ficheiro nao existe.
  */
+let envFileLoaded: string | null = null;
+
 function loadEnvFile(): void {
   const candidates = [
     path.resolve(process.cwd(), ".env"),
@@ -27,6 +29,7 @@ function loadEnvFile(): void {
 
   try {
     process.loadEnvFile(found);
+    envFileLoaded = found;
     console.log(`Variaveis de ambiente carregadas de ${found}`);
   } catch (error) {
     console.warn(`Nao consegui carregar ${found}:`, error);
@@ -128,6 +131,20 @@ function formatAddresses(items: unknown[]): string {
     .join(", ");
 }
 
+// Resumo do que o servidor ve, sem revelar a password. Vai para o log no
+// arranque e serve o GET /api/estado, para se diagnosticar pelo browser.
+function emailStatus() {
+  return {
+    configurado: Boolean(createTransport()),
+    smtp_host: process.env.SMTP_HOST?.trim() || "(em falta)",
+    smtp_port: process.env.SMTP_PORT?.trim() || "(por omissao: 587)",
+    smtp_user: process.env.SMTP_USER?.trim() || "(em falta)",
+    smtp_pass: process.env.SMTP_PASS ? "definida" : "(em falta)",
+    destino: contactEmail(),
+    env_file: envFileLoaded ? path.basename(envFileLoaded) : "(nao encontrado)",
+  };
+}
+
 async function startServer() {
   loadEnvFile();
 
@@ -142,6 +159,12 @@ async function startServer() {
   }
 
   console.log(`Serving client build from ${staticPath}`);
+  console.log(`[email] ${JSON.stringify(emailStatus())}`);
+
+  // Diagnostico a partir do browser: /api/estado. Nao revela a password.
+  app.get("/api/estado", (_req, res) => {
+    res.json(emailStatus());
+  });
 
   // Fica antes do catch-all do SPA, que responde a qualquer GET com o index.html.
   app.post("/api/pedido", express.json({ limit: "32kb" }), async (req, res) => {
