@@ -274,13 +274,16 @@ o problema é de entrega (spam / DKIM), não de envio.
 Para ver o que o servidor vê **no ar**, abre
 `https://parametrico-ia.3dhr.pt/api/estado`. Diz se está `configurado`, os
 valores não-secretos (`smtp_host`, `smtp_port`, `smtp_user`), se a password está
-«definida», o `destino` e — para diagnóstico — o `cwd`, os `env_candidatos` a
-`.env`, a `raiz`, o `port_env` e os **nomes** das variáveis que chegaram ao
-processo (`env_relevante`). O mesmo resumo sai no log, na linha `[email]`.
+«definida», o `destino` e os **nomes** das variáveis que chegaram ao processo
+(`env_relevante`) — nunca valores. O mesmo resumo sai no log, na linha `[email]`.
 
-Serve para separar três causas: (1) as variáveis não foram guardadas no hPanel,
-(2) a plataforma não injecta o ambiente no runtime, ou (3) o `.env` foi escrito
-noutro sítio. Pode ser removido quando o email estiver a funcionar.
+É a primeira coisa a olhar quando o formulário mostra «Falta configurar o envio
+de email»: separa «a variável não foi guardada» de «não chegou ao runtime».
+
+Em 2026-10-15 este endpoint expôs também o `cwd`, o `dirname`, os candidatos a
+`.env` e a listagem da raiz — foi o que localizou o problema. Esses campos foram
+removidos quando o envio passou a funcionar, para não publicar caminhos do
+servidor.
 
 ### Autenticação de email (para os pedidos não caírem em spam)
 
@@ -437,11 +440,17 @@ o `index.html` sai com ~3,9 kB. O comportamento por omissão do código continua
 ser «runtime ligado», para não partir um build dentro do Manus.
 
 Para o formulário enviar email, acrescenta **`SMTP_HOST`**, **`SMTP_PORT`**,
-**`SMTP_USER`** e **`SMTP_PASS`** (e, se quiseres, `MAIL_TO` /
-`MAIL_FROM_NAME`) — ver «Variáveis de ambiente». O servidor lê-as no arranque, do
-ambiente do processo **ou** de um `.env` na raiz (a Hostinger escreve esse
-ficheiro; o servidor carrega-o com `process.loadEnvFile`, porque não usa dotenv):
-depois de as guardares, faz **Redeploy**.
+**`SMTP_USER`** e **`SMTP_PASS`** (e, se quiseres, `MAIL_TO` / `MAIL_FROM_NAME`)
+— ver «Variáveis de ambiente».
+
+Têm de ficar na aplicação Node.js (**Websites → `parametrico-ia.3dhr.pt` →
+Environment variables**), no **mesmo sítio** das `MANUS_RUNTIME` e
+`VITE_ANALYTICS_*`. A lista tem de ficar com **7** entradas. Depois, **Redeploy** —
+guardar não chega: as variáveis só entram quando a app arranca outra vez.
+
+A Hostinger **injecta-as directamente no processo** e **não escreve nenhum `.env`**
+no servidor (confirmado em 2026-10-15 com o `/api/estado`). O servidor também sabe
+ler um `.env` da raiz, via `process.loadEnvFile`, para o `pnpm dev` local.
 
 As variáveis `VITE_ANALYTICS_*` são opcionais: sem elas o `index.html` fica com
 os marcadores `%VITE_...%` e o script de analytics não é injetado (o próprio
@@ -459,7 +468,8 @@ O `vite.config.ts` não define `base`, pelo que o site assume a raiz do domínio
 | Bloco vermelho do pnpm em PowerShell | aviso do campo `pnpm` deprecado | já resolvido — não voltar a acrescentar o campo ao `package.json` |
 | Build falha com `This project is configured to use 10.15.1 of pnpm` | o campo `packageManager` fixava uma versão diferente da do servidor | já resolvido — o campo foi removido; ver "Versões e configuração do pnpm" |
 | Formulário: «nada acontece» ao enviar | `mailto:` sem cliente de email associado no browser | configurar as `SMTP_*` — ver «Contacto e inscrições» |
-| Formulário: aparece «Pedido preparado» em vez de «Pedido enviado» | faltam as `SMTP_*` no hPanel, ou o envio falhou | procurar `[pedido] falha ao enviar por SMTP` no log e conferir as credenciais |
+| Formulário: aviso «Falta configurar o envio de email» | faltam as `SMTP_*` no hPanel | Websites → `parametrico-ia.3dhr.pt` → Environment variables; a lista tem de ter **7** entradas. Confirmar em `/api/estado` |
+| Formulário: aviso «O envio directo falhou» | as `SMTP_*` chegaram, mas o SMTP recusou | procurar `[pedido] falha ao enviar por SMTP` no log e conferir a password / a porta |
 | Formulário: aparece «Pedido enviado» mas o email não chega | é problema de **entrega**, não de envio | ver no log `[pedido] destinatario=… aceitou=[…]`; confirmar o **SPAM** da caixa. SPF ✓, DKIM `hostingermail1` ✓ e DMARC `p=none` — ver «Autenticação de email» |
 | `Port 3000 is in use, trying another one...` → Vite em `http://localhost:3001` | já há um Vite a correr | usa o URL que o Vite imprime (3001) ou fecha o servidor antigo; a porta 3000 fica sem ninguém |
 | `ERR_CONNECTION_REFUSED` / `Failed to Load Page` em `localhost:3000` | nenhum servidor a correr (não há ficheiro estático a abrir) | `pnpm dev` e deixar o terminal aberto — ver "Como abrir o site" |

@@ -1,5 +1,5 @@
 import express from "express";
-import { existsSync, readdirSync } from "fs";
+import { existsSync } from "fs";
 import { createServer } from "http";
 import nodemailer from "nodemailer";
 import path from "path";
@@ -137,26 +137,20 @@ function formatAddresses(items: unknown[]): string {
 }
 
 // Nomes (nunca valores) das variaveis de configuracao presentes no processo.
-// Se nem o MANUS_RUNTIME nem as VITE_* aparecerem, a plataforma nao esta a
-// injectar o ambiente no runtime — e o problema nao e dos nomes das SMTP_*.
+// Responde a "a minha variavel chegou ao runtime?" sem revelar nada.
 function relevantEnvKeys(): string[] {
   return Object.keys(process.env)
-    .filter((key) => /SMTP|MAIL|MANUS|VITE|PORT|ANALYTICS|NODE_ENV/.test(key))
+    .filter((key) => /SMTP|MAIL|MANUS|VITE|ANALYTICS/.test(key))
     .sort();
 }
 
-function rootEntries(): string[] {
-  try {
-    return readdirSync(process.cwd())
-      .filter((name) => name !== "node_modules")
-      .slice(0, 40);
-  } catch {
-    return [];
-  }
-}
-
 // Resumo do que o servidor ve, sem revelar a password. Vai para o log no
-// arranque e serve o GET /api/estado, para se diagnosticar pelo browser.
+// arranque e serve o GET /api/estado.
+//
+// Chegou a expor `cwd`, `dirname`, os candidatos a `.env` e a listagem da raiz:
+// foi isso que localizou o problema em 2026-10-15 (a Hostinger injecta as
+// variaveis directamente e nao escreve `.env`). Removido quando o envio passou a
+// funcionar, para nao publicar caminhos do servidor.
 function emailStatus() {
   return {
     configurado: Boolean(createTransport()),
@@ -166,15 +160,6 @@ function emailStatus() {
     smtp_pass: process.env.SMTP_PASS ? "definida" : "(em falta)",
     destino: contactEmail(),
     env_file: envFileLoaded ? path.basename(envFileLoaded) : "(nao encontrado)",
-    // Onde procurar e o que existe, para localizar o .env no servidor.
-    cwd: process.cwd(),
-    dirname: __dirname,
-    env_candidatos: envCandidates().map((candidate) => ({
-      caminho: candidate,
-      existe: existsSync(candidate),
-    })),
-    raiz: rootEntries(),
-    port_env: process.env.PORT ?? "(em falta)",
     env_relevante: relevantEnvKeys(),
   };
 }
