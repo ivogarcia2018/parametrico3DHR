@@ -272,10 +272,15 @@ Se terminar com «o servidor aceitou a mensagem» e o email não aparecer na cai
 o problema é de entrega (spam / DKIM), não de envio.
 
 Para ver o que o servidor vê **no ar**, abre
-`https://parametrico-ia.3dhr.pt/api/estado`. Responde com `configurado`,
-`smtp_host`, `smtp_port`, `smtp_user`, `smtp_pass` (apenas «definida» / «em
-falta»), `destino` e `env_file` — sem revelar a password. O mesmo resumo sai no
-log do deploy, na linha `[email]`.
+`https://parametrico-ia.3dhr.pt/api/estado`. Diz se está `configurado`, os
+valores não-secretos (`smtp_host`, `smtp_port`, `smtp_user`), se a password está
+«definida», o `destino` e — para diagnóstico — o `cwd`, os `env_candidatos` a
+`.env`, a `raiz`, o `port_env` e os **nomes** das variáveis que chegaram ao
+processo (`env_relevante`). O mesmo resumo sai no log, na linha `[email]`.
+
+Serve para separar três causas: (1) as variáveis não foram guardadas no hPanel,
+(2) a plataforma não injecta o ambiente no runtime, ou (3) o `.env` foi escrito
+noutro sítio. Pode ser removido quando o email estiver a funcionar.
 
 ### Autenticação de email (para os pedidos não caírem em spam)
 
