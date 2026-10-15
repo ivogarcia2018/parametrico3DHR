@@ -1,4 +1,4 @@
-# Dependencies
+﻿# Dependencies
 **/node_modules
 .pnpm-store/
 
@@ -24,6 +24,10 @@ build/
 # OS generated files
 .DS_Store
 .DS_Store?
+client/scripts/brand/_lockup_preview.png
+client/scripts/brand/_graph_preview.png
+
+
 ._*
 .Spotlight-V100
 .Trashes
@@ -115,3 +119,6 @@ client/public/__manus__/version.json
 # Temporary and log dirs from local tooling
 .tmp_media/
 .manus-logs/
+
+client/scripts/brand/_preview.png
+client/scripts/brand/_favicon_probe.png

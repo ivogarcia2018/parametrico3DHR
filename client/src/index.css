@@ -74,8 +74,72 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
   .button-outline-light { border: 1px solid rgba(242, 239, 230, 0.45); color: #f2efe6; }
   .button-outline-light:hover { border-color: #e96b3b; color: #e96b3b; transform: translateY(-2px); }
   .section-kicker { font-family: "IBM Plex Mono", monospace; font-size: 10px; font-weight: 600; letter-spacing: 0.18em; line-height: 1; text-transform: uppercase; color: rgba(23, 23, 21, 0.55); }
+  /* Titulos display dimensionados pela largura real da sua coluna (.title-col
+     precisa de container-type) e limitados à palavra mais longa de cada
+     titulo: nunca partem palavras ao meio nem invadem a coluna vizinha. */
+  .title-col { container-type: inline-size; min-width: 0; }
+  .title-fit { max-width: 100%; font-size: clamp(1.9rem, 12cqi, 4.5rem); overflow-wrap: normal; word-break: normal; hyphens: none; }
+  .title-fit-tight { font-size: clamp(1.4rem, 9.2cqi, 4.5rem); }
   .stat-value { font-family: "Syne", sans-serif; font-size: 1.8rem; font-weight: 800; line-height: 0.9; letter-spacing: -0.07em; }
   .stat-label { margin-top: 0.5rem; font-family: "IBM Plex Mono", monospace; font-size: 8px; line-height: 1.2; text-transform: uppercase; letter-spacing: 0.11em; color: rgba(242, 239, 230, 0.48); }
+  /* Fundo animado: folha de desenho CAD que se traça sozinha, um grafo a
+     ligar-se como uma definicao Grasshopper a resolver.
+
+     Contrato de camadas, em ordem de pintura:
+       1. fundo chapado da seccao        (z-auto, nao cria contexto)
+       2. a folha, este canvas           (z-20)
+       3. o conteudo: texto, botoes,
+          cartoes, rodape                (.field-content, z-30)
+     O canvas fica acima do fundo e abaixo do conteudo — e' um fundo, nao uma
+     trama por cima da pagina. Por isso cada bloco de conteudo das seccoes
+     leva `relative z-30`: um `z-index` sem posicionamento nao faz nada, e
+     as seccoes com `isolate` (o hero) criam contexto proprio e inescapable
+     — dai o `isolate` ter saido do hero, para o texto poder subir.
+
+     pointer-events:none e essencial: sem isto o canvas roubava o rato ao
+     texto e aos botoes, porque cobre a janela inteira. */
+  .graph-field {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    pointer-events: none;
+  }
+  /* Bloco de conteudo de uma seccao: acima da folha, abaixo do header
+     (z-40), do menu movel e do CTA (z-45). Aplica-se ao contentor directo
+     de cada seccao — basta o contentor subir, todo o texto la dentro sobe
+     com ele, sem ter de marcar elemento a elemento. */
+  .field-content { position: relative; z-index: 30; }
+  /* Quem pede menos movimento nao recebe canvas nenhum: o componente detecta
+     `prefers-reduced-motion` e desenha so um frame estatico, por isso o
+     elemento e' escondido por CSS e o trabalho de JS acontece fora da tela.
+     Um grafo parado com numeros fixos seria pior do que nenhum. */
+  @media (prefers-reduced-motion: reduce) {
+    .graph-field { display: none; }
+  }
+
+  /* Logotipo oficial 3DHR Training. Substitui a placa anterior: o lockup (vidro
+     "3DHR" + barra laranja "TRAINING", razao 5,10:1) ja diz o nome completo,
+     pelo que a placa e o wordmark de texto sairam de cena para nao repetir.
+     Gerado por client/scripts/brand/make_lockup.py.
+
+     A altura vem de --brand-h (posta pelo componente BrandMark) e nao de um
+     `height` inline, para esta media query poder encurtar o logo. Com razao
+     5,10:1 a largura e' o gargalo: entre 768 e 1023 px a barra de navegacao
+     compete com os links, e 26 px de altura dariam ~133 px de lado a lado de
+     "Reservar lugar". O rodape, mais folgado, fica na altura que lhe pedem. */
+  .brand-logo {
+    display: block;
+    flex-shrink: 0;
+    height: var(--brand-h, 26px);
+    width: auto;
+    object-fit: contain;
+    transition: opacity 180ms ease-out, transform 180ms ease-out;
+  }
+  .group:hover .brand-logo { opacity: 0.88; transform: translateY(-1px); }
+  @media (min-width: 768px) and (max-width: 1279px) {
+    header .brand-logo { height: 21px; }
+  }
+
   .stage-selector { border-block: 1px solid transparent; padding: 1rem 0.75rem; transition: border-color 180ms ease-out, padding-left 180ms ease-out, background-color 180ms ease-out; }
   .stage-selector:hover, .stage-selector-active { border-color: rgba(23, 23, 21, 0.18); background: rgba(23, 23, 21, 0.035); padding-left: 1rem; }
   .program-card { min-height: 390px; transition: background-color 220ms ease-out, transform 220ms cubic-bezier(0.23, 1, 0.32, 1); }
@@ -191,3 +255,47 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
 @media (min-width: 640px) { .container { padding-inline: 1.5rem; } }
 @media (min-width: 1024px) { .container { max-width: 1280px; padding-inline: 2rem; } }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; } }
+/* =====================================================================
+   Modo edição de texto (só existe em desenvolvimento — ver
+   client/src/components/CopyEditor.tsx).
+
+   Fica fora das @layer de propósito: estas regras são uma ferramenta, não
+   fazem parte do design, e assim ganham aos utilitários do Tailwind sem
+   precisar de `!important`. O painel afasta-se do canto inferior direito
+   onde vive o CTA flutuante (z-45).
+   ===================================================================== */
+.copy-edit-ui { position: fixed; left: 1rem; bottom: 1rem; z-index: 60; font-family: "IBM Plex Mono", monospace; }
+.copy-edit-toggle { display: inline-flex; align-items: center; gap: 0.5rem; border: 1px solid rgba(242, 239, 230, 0.3); background: rgba(23, 23, 21, 0.9); padding: 0.7rem 0.85rem; color: #f2efe6; box-shadow: 0 12px 30px rgba(23, 23, 21, 0.2); backdrop-filter: blur(12px); font-size: 9px; font-weight: 600; letter-spacing: 0.13em; line-height: 1; text-transform: uppercase; transition: transform 180ms cubic-bezier(0.23, 1, 0.32, 1), border-color 180ms ease-out; }
+.copy-edit-toggle::before { content: ""; height: 0.4rem; width: 0.4rem; border-radius: 999px; background: #e96b3b; }
+.copy-edit-toggle:hover { border-color: #e96b3b; transform: translateY(-3px); }
+.copy-edit-panel { width: min(21rem, calc(100vw - 2rem)); border: 1px solid rgba(242, 239, 230, 0.22); background: rgba(23, 23, 21, 0.95); backdrop-filter: blur(16px); padding: 0.85rem; color: #f2efe6; box-shadow: 0 18px 44px rgba(23, 23, 21, 0.3); }
+.copy-edit-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; border-bottom: 1px solid rgba(242, 239, 230, 0.16); padding-bottom: 0.5rem; }
+.copy-edit-title { font-family: "Syne", sans-serif; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+.copy-edit-count { font-size: 8px; letter-spacing: 0.11em; text-transform: uppercase; color: rgba(242, 239, 230, 0.5); }
+.copy-edit-count.is-dirty { color: #e96b3b; }
+.copy-edit-hint { margin: 0.6rem 0 0.7rem; font-size: 9px; line-height: 1.5; letter-spacing: 0.02em; color: rgba(242, 239, 230, 0.66); }
+.copy-edit-hint strong { color: #f2efe6; font-weight: 600; }
+.copy-edit-state { margin: 0 0 0.7rem; border-left: 2px solid #e96b3b; padding-left: 0.5rem; font-size: 8px; line-height: 1.55; letter-spacing: 0.02em; color: rgba(242, 239, 230, 0.62); }
+.copy-edit-state strong { color: #e96b3b; font-weight: 600; }
+.copy-edit-actions { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.copy-edit-button { border: 1px solid rgba(242, 239, 230, 0.24); background: transparent; padding: 0.5rem 0.6rem; color: rgba(242, 239, 230, 0.85); font-family: inherit; font-size: 8px; font-weight: 600; letter-spacing: 0.11em; line-height: 1; text-transform: uppercase; transition: border-color 160ms ease-out, background-color 160ms ease-out, color 160ms ease-out; }
+.copy-edit-button:hover:not(:disabled) { border-color: #e96b3b; color: #f2efe6; }
+.copy-edit-button:disabled { opacity: 0.4; cursor: not-allowed; }
+.copy-edit-primary { border-color: #e96b3b; background: #e96b3b; color: #171715; }
+.copy-edit-primary:hover:not(:disabled) { background: #f2efe6; border-color: #f2efe6; color: #171715; }
+.copy-edit-attrs { margin-top: 0.7rem; border-top: 1px solid rgba(242, 239, 230, 0.16); padding-top: 0.55rem; }
+.copy-edit-section { width: 100%; background: transparent; border: 0; padding: 0; color: rgba(242, 239, 230, 0.6); font-family: inherit; font-size: 8px; letter-spacing: 0.09em; text-transform: uppercase; text-align: left; }
+.copy-edit-section:hover { color: #e96b3b; }
+.copy-edit-attr-list { margin-top: 0.55rem; max-height: 11rem; overflow-y: auto; display: grid; gap: 0.4rem; }
+.copy-edit-attr-row { display: grid; gap: 0.2rem; }
+.copy-edit-attr-label { font-size: 8px; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(233, 107, 59, 0.9); }
+.copy-edit-attr-input { width: 100%; border: 1px solid rgba(242, 239, 230, 0.22); background: rgba(242, 239, 230, 0.06); padding: 0.35rem 0.4rem; color: #f2efe6; font-family: inherit; font-size: 10px; line-height: 1.4; }
+.copy-edit-attr-input:focus { border-color: #e96b3b; outline: none; }
+
+/* Enquanto se edita, cada texto ganha um alvo visível. O sublinhado tracejado
+   mostra o que é editável sem mexer em cor, tamanho ou espaçamento — o texto
+   tem de continuar a parecer-se com o resultado final. */
+.copy-edit-mode .copy-edit-text { border-radius: 2px; box-shadow: inset 0 -1px 0 rgba(233, 107, 59, 0.35); cursor: text; transition: background-color 130ms ease-out; }
+.copy-edit-mode .copy-edit-text:hover { background-color: rgba(233, 107, 59, 0.16); }
+.copy-edit-mode .copy-edit-text:focus { outline: 1px dashed #e96b3b; outline-offset: 2px; background-color: rgba(233, 107, 59, 0.2); }
+.copy-edit-mode .copy-edit-text:empty::before { content: "…"; color: rgba(233, 107, 59, 0.7); }

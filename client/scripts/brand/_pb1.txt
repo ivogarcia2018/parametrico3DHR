@@ -1,0 +1,330 @@
+# Parte 1: composicao + inicio de build_figure
+# --- Composicao: as folhas do ciclo -----------------------------------------
+def composition(width, height, cycle):
+    """Porta de `composition`. A semente inclui o ciclo para o preview ser
+    independente de execucao a execucao: cada invocacao mostra um ciclo
+    exacto, enquanto o componente mantem o baralho entre ciclos."""
+    cols = 1 if width < 760 else 2
+    count = CELLS_MOBILE if width < 760 else CELLS_DESKTOP
+    rows = math.ceil(count / cols)
+    pad_x, pad_y = width * 0.06, height * 0.09
+    gap_x, gap_y = width * 0.035, height * 0.055
+    cell_w = (width - pad_x * 2 - gap_x * (cols - 1)) / cols
+    cell_h = (height - pad_y * 2 - gap_y * (rows - 1)) / rows
+
+    # Baralho embaralhado: 4 figuras por ciclo sem repeticao. Com 11 figuras e
+    # 4 folhas por ciclo, so' a terceira volta repete alguma coisa.
+    bag = FIGURES[:]
+    r = Rng(round(width) * 7919 + cycle * 104729)
+    for i in range(len(bag) - 1, 0, -1):
+        j = int(r.next() * (i + 1))
+        bag[i], bag[j] = bag[j], bag[i]
+
+    cells = []
+    for i in range(count):
+        cells.append(
+            {
+                "fig": bag[i],
+                "x": pad_x + (i % cols) * (cell_w + gap_x),
+                "y": pad_y + (i // cols) * (cell_h + gap_y),
+                "w": cell_w,
+                "h": cell_h,
+                "number": cycle * count + i + 1,
+            }
+        )
+    return {"w": width, "h": height, "cols": cols, "cells": cells}
+
+
+# --- Uma folha: uma figura dentro de (0,0)-(w,h) ----------------------------
+def build_figure(kind, w, h, rand, sheet_no):
+    """Porta de `buildFigure`. O `order` e' local a folha (0 = lado esquerdo)."""
+    ops, spots = [], []
+
+    def order(x):
+        return max(0.0, min(1.0, x / w))
+
+    def line(pts, weight=1, hot=0):
+        ops.append(("line", pts, order(pts[0][0]), weight, hot))
+
+    def rect(x, y, rw, rh, weight=1, hot=0):
+        ops.append(("rect", (x, y, rw, rh), order(x), weight, hot))
+
+    def arc(cx, cy, r, a0, a1, weight=1, hot=0):
+        ops.append(("arc", (cx, cy, r, a0, a1), order(cx - r), weight, hot))
+
+    def text(x, y, s, size=9, hot=0):
+        ops.append(("text", (x, y, s, size), order(x), 1, hot))
+
+    x = y = 0
+    ox = 0.0
+    # Contagens para um quarto de tela: os numeros que serviam a folha unica
+    # deixavam aqui um anel de 46 raios dentro de uma caixa de ~900 px, que se
+    # lia como ruido em vez de estrutura.
+    ribs = 20 + int(rand.next() * 16)
+    nodes_n = 5 + int(rand.next() * 3)
+    bars_n = 6 + int(rand.next() * 5)
+    slabs = 3 + int(rand.next() * 3)
+    hatch_n = 34 + int(rand.next() * 34)
+
+    # Moldura e marcas de canto, como num desenho tecnico.
+    rect(x, y, w, h, 1.4)
+    t = 14
+    line([(x, y), (x + t, y)], 1.4)
+    line([(x, y), (x, y + t)], 1.4)
+    line([(x + w, y + h), (x + w - t, y + h)], 1.4)
+    line([(x + w, y + h), (x + w, y + h - t)], 1.4)
+    text(x, y - 7, f"{kind.upper()} / {sheet_no:02d}", 8, 0.6)
+
+    if kind == "plan":
+        n = 4
+        for i in range(1, n):
+            line([(x + w * i / n, y), (x + w * i / n, y + h)], 0.8)
+            line([(x, y + h * i / n), (x + w, y + h * i / n)], 0.8)
+        rect(x + w * 0.34, y + h * 0.34, w * 0.32, h * 0.32, 1.2, 1)
+        spots.append((x + w * 0.5, y + h * 0.5, "\u00d8 5 000", 5000, ox))
+        line([(x, y + h + 16), (x + w, y + h + 16)], 0.8)
+        line([(x, y + h + 12), (x, y + h + 20)], 0.8)
+        line([(x + w, y + h + 12), (x + w, y + h + 20)], 0.8)
+    elif kind == "radial":
+        # Planta do pavilhao em aneis concentricos com raios: em planta, os
+        # aneis dao a leitura de estrutura que o leque de costelas nao dava.
+        cx, cy = x + w / 2, y + h * 0.52
+        rad = min(w, h) * 0.36
+        arc(cx, cy, rad, 0, math.tau, 1.3, 1)
+        arc(cx, cy, rad * 0.62, 0, math.tau, 0.9)
+        arc(cx, cy, rad * 0.26, 0, math.tau, 0.9)
+        for i in range(ribs):
+            a = (i / ribs) * math.tau
+            line(
+                [
+                    (cx + math.cos(a) * rad * 0.26, cy + math.sin(a) * rad * 0.26),
+                    (cx + math.cos(a) * rad, cy + math.sin(a) * rad),
+                ],
+                0.7,
+                0.55 if i % 4 == 0 else 0,
+            )
+        line([(cx - rad * 0.26, cy), (cx + rad * 0.26, cy)], 0.8)
+        spots.append((cx, cy - rad - 14, "24 costelas", 24, ox))
+
+    elif kind == "section":
+        # Corte: perfil a cheio com hachura a 45 graus por baixo.
+        base = y + h * 0.78
+        poly = [
+            (x + w * 0.12, base),
+            (x + w * 0.3, y + h * 0.34),
+            (x + w * 0.7, y + h * 0.34),
+            (x + w * 0.88, base),
+        ]
+        line(poly, 1.4, 1)
+        line([(x + w * 0.12, base), (x + w * 0.88, base)], 1.2)
+        for _ in range(hatch_n):
+            px = x + w * 0.1 + rand.next() * w * 0.8
+            py = y + h * 0.32 + rand.next() * (h * 0.46)
+            if inside(poly, px, py):
+                line([(px, py), (px + 7, py + 7)], 0.6)
+        line([(x + w * 0.94, y + h * 0.34), (x + w * 0.94, base)], 0.8)
+        text(x + w * 0.14, y + h * 0.26, "corte A-A", 8, 0.5)
+    elif kind == "elevation":
+        # Alcado: verticais de alturas varias sobre a linha de terre, fechadas
+        # por um perfil de cobertura, e cota de altura.
+        base = y + h * 0.84
+        roof = []
+        for i in range(bars_n):
+            px = x + w * 0.14 + (i * w * 0.72) / (bars_n - 1)
+            ph = h * (0.3 + rand.next() * 0.32)
+            roof.append((px, base - ph))
+            line([(px, base), (px, base - ph)], 0.9, 1 if i == 3 else 0)
+        line(roof, 1.2, 1)
+        line([(x + w * 0.12, base), (x + w * 0.88, base)], 1.2)
+        line([(x + w * 0.08, y + h * 0.3), (x + w * 0.08, base)], 0.8)
+        line([(x + w * 0.05, y + h * 0.3), (x + w * 0.11, y + h * 0.3)], 0.8)
+        line([(x + w * 0.05, base), (x + w * 0.11, base)], 0.8)
+        text(x + w * 0.12, y + h * 0.27, "h 3 000", 8)
+    elif kind == "axo":
+        # Axonometria explodida: lajes com arestas verticais a ligar as
+        # successivas. Sem essas arestas eram laminas soltas.
+        rings = []
+        for i in range(slabs):
+            bx, by = x + w * 0.2 + i * w * 0.1, y + h * 0.68 - i * h * 0.2
+            bw, dx, dy = w * 0.36, w * 0.085, h * 0.07
+            ring = [(bx, by), (bx + bw, by), (bx + bw + dx, by - dy), (bx + dx, by - dy)]
+            line(ring, 0.9, 1 if i == 2 else 0)
+            line([ring[0], ring[3]], 0.7)
+            line([ring[1], ring[2]], 0.7)
+            rings.append(ring)
+        for i in range(slabs - 1):
+            for k in range(4):
+                line([rings[i][k], rings[i + 1][k]], 0.6)
+    elif kind == "graph":
+        # Grafo: componentes com cruzes e fios em S, como no Grasshopper.
+        # As caixas levam uma unidade `u` derivada do lado menor da figura: com
+        # um tamanho fixo em pixels, um no ficava do tamanho de uma letra
+        # dentro da moldura e o grafo lia-se como uma frase com a palavra "ON".
+        u = min(w, h) * 0.032
+        nodes = []
+        for i in range(nodes_n):
+            px = x + w * 0.16 + (i * w * 0.68) / (nodes_n - 1)
+            # A ondulacao ocupa a altura toda: os fios em S precisam de percurso.
+            py = y + h * 0.5 + (-1 if i % 2 == 0 else 1) * h * 0.22
+            nodes.append((px, py))
+            rect(px - u, py - u, u * 2, u * 2, 1.2, 1 if i == nodes_n - 1 else 0)
+            line([(px - u * 0.27, py - u * 0.27), (px + u * 0.27, py + u * 0.27)], 0.7)
+            line([(px + u * 0.27, py - u * 0.27), (px - u * 0.27, py + u * 0.27)], 0.7)
+            text(px - u, py - u * 1.55, GH_LABELS[i % len(GH_LABELS)], 8, 0.6 if i == nodes_n - 1 else 0)
+        for i in range(nodes_n - 1):
+            p0 = (nodes[i][0] + u, nodes[i][1])
+            p1 = (nodes[i + 1][0] - u, nodes[i + 1][1])
+            mid = (p0[0] + p1[0]) / 2
+            c1, c2 = (mid, p0[1]), (mid, p1[1])
+            # Bezier cubica com tangentes horizontais nas duas pontas: e' o "S"
+            # que o Grasshopper desenha entre portas.
+            pts = []
+            for s in range(25):
+                tt = s / 24
+                uu = 1 - tt
+                pts.append(
+                    (
+                        uu ** 3 * p0[0] + 3 * uu * uu * tt * c1[0] + 3 * uu * tt * tt * c2[0] + tt ** 3 * p1[0],
+                        uu ** 3 * p0[1] + 3 * uu * uu * tt * c1[1] + 3 * uu * tt * tt * c2[1] + tt ** 3 * p1[1],
+                    )
+                )
+            line(pts, 1, 0.8 if i == nodes_n - 2 else 0)
+        spots.append((nodes[-1][0], nodes[-1][1] + u * 2.4, "0.5 mm", 5, ox))
+    elif kind == "diagrid":
+        # Diagrid: quadrícula triangulada, a malha de estrutura.
+        n = 4 + int(rand.next() * 3)
+        dx, dy = w / n, h / n
+        for i in range(n + 1):
+            line([(x + i * dx, y), (x + i * dx, y + h)], 0.6)
+            line([(x, y + i * dy), (x + w, y + i * dy)], 0.6)
+        for i in range(n):
+            for j in range(n):
+                if (i + j) % 2 == 0:
+                    continue
+                line([(x + i * dx, y + j * dy), (x + (i + 1) * dx, y + (j + 1) * dy)], 0.7)
+        spots.append((x + w * 0.5, y - 10, "diagrid", 0, ox))
+    elif kind == "spiral":
+        # Espiral com radios de referencia: a espinha do pavilhao.
+        cx, cy = x + w * 0.5, y + h * 0.56
+        turns = 1.6 + rand.next()
+        m = min(w, h)
+        pts = []
+        for s in range(61):
+            a = (s / 60) * math.tau * turns
+            r = (s / 60) * m * 0.42 + m * 0.04
+            pts.append((cx + math.cos(a) * r, cy + math.sin(a) * r * 0.82))
+        line(pts, 1.3, 1)
+        for i in range(12):
+            t2 = i / 12
+            a = t2 * math.tau * turns
+            r = t2 * m * 0.42 + m * 0.04
+            line(
+                [
+                    (cx + math.cos(a) * r, cy + math.sin(a) * r * 0.82),
+                    (cx + math.cos(a) * (r + 9), cy + math.sin(a) * (r + 9) * 0.82),
+                ],
+                0.6,
+            )
+    elif kind == "contour":
+        # Curvas de nivel: curvas fechadas irregulares, uma por cota.
+        layers = 3 + int(rand.next() * 3)
+        for L in range(layers, 0, -1):
+            k = L / layers
+            pts = []
+            for s in range(40):
+                a = (s / 40) * math.tau
+                wob = 1 + 0.16 * math.sin(a * 3 + L) + 0.08 * math.sin(a * 5 - L)
+                pts.append(
+                    (
+                        x + w * 0.5 + math.cos(a) * w * 0.4 * k * wob,
+                        y + h * 0.5 + math.sin(a) * h * 0.4 * k * wob,
+                    )
+                )
+            line(pts, 1.2 if L == 1 else 0.7, 1 if L == 1 else 0)
+    elif kind == "detail":
+        # Pormenor de encontro: duas pecas separadas por uma folga, com linha
+        # de chamada e rotulo — o desenho de um unico node.
+        cy = y + h * 0.55
+        rect(x + w * 0.18, cy - h * 0.14, w * 0.28, h * 0.28, 1.2, 1)
+        rect(x + w * 0.5, cy - h * 0.14, w * 0.28, h * 0.28, 1.2, 1)
+        line([(x + w * 0.46, cy), (x + w * 0.5, cy)], 0.9, 1)
+        for i in range(4):
+            yy = cy - h * 0.1 + i * h * 0.06
+            line([(x + w * 0.2, yy), (x + w * 0.44, yy)], 0.6)
+        line([(x + w * 0.66, cy), (x + w * 0.82, y + h * 0.28)], 0.8)
+        arc(x + w * 0.86, y + h * 0.24, 13, 0, math.tau, 1, 1)
+        text(x + w * 0.83, y + h * 0.27, "A", 9, 1)
+        text(x + w * 0.18, cy + h * 0.22, "folga 0,5", 8)
+    else:
+        # Module: grelha modular com uma celula destacada e cota.
+        n = 4 + int(rand.next() * 4)
+        cell = 2 + int(rand.next() * (n - 2))
+        cw, chh = w / n, h / n
+        for i in range(n):
+            for j in range(n):
+                if i == cell and j == cell:
+                    continue
+                rect(x + i * cw, y + j * chh, cw, chh, 0.7)
+        rect(x + cell * cw, y + cell * chh, cw, chh, 1.3, 1)
+        line([(x, y + h + 14), (x + w, y + h + 14)], 0.7)
+        line([(x, y + h + 10), (x, y + h + 18)], 0.7)
+        line([(x + w, y + h + 10), (x + w, y + h + 18)], 0.7)
+        spots.append((x + (cell + 0.5) * cw, y + (cell + 0.5) * chh, "mod", 0, ox))
+
+    # Nota de caderno no canto direito da folha: uma linha do repertorio, muda
+    # por figura, para quatro folhas vizinhas nao partilharem a mesma margem.
+    text(w * 0.6, -7, CODE_POOL[int(rand.next() * len(CODE_POOL))], 8, 0.3)
+
+    ops.sort(key=lambda o: o[2])
+    spots.sort(key=lambda s: s[4])
+    return ops, spots
+
+
+# --- Junta das folhas do ciclo ----------------------------------------------
+def build_scene(comp, rand):
+    """Porta de `buildScene`. A celula i ocupa [i/N, (i+1)/N] da linha do tempo
+    de revelacao, o que faz o traco passar de prancha em prancha."""
+    ops, spots = [], []
+    count = len(comp["cells"])
+    w, h = comp["w"], comp["h"]
+
+    # Grelha de modulo: o papel milimetrado por baixo de tudo, em coordenadas
+    # de tela. O modulo tambem varia, senao todas as folhas partilham-na.
+    mod = 46 + int(rand.next() * 22)
+    for gx in range(mod, int(w), mod):
+        ops.append(("line", [(gx, 0), (gx, h)], min(1.0, gx / w), 0.5, 0))
+    for gy in range(mod, int(h), mod):
+        ops.append(("line", [(0, gy), (w, gy)], 0.0, 0.5, 0))
+
+    for i, cell in enumerate(comp["cells"]):
+        sheet_ops, sheet_spots = build_figure(
+            cell["fig"], cell["w"], cell["h"], rand, cell["number"]
+        )
+        base, span = i / count, 1 / count
+        cx, cy = cell["x"], cell["y"]
+        for kind, data, o_, weight, hot in sheet_ops:
+            o = base + o_ * span
+            if kind == "line":
+                data = [(px + cx, py + cy) for px, py in data]
+            elif kind == "arc":
+                data = (data[0] + cx, data[1] + cy, data[2], data[3], data[4])
+            else:
+                data = (data[0] + cx, data[1] + cy, data[2], data[3])
+            ops.append((kind, data, o, weight, hot))
+        for sx, sy, label, value, o_ in sheet_spots:
+            spots.append((sx + cx, sy + cy, label, value, base + o_ * span))
+
+    ops.sort(key=lambda o: o[2])
+    spots.sort(key=lambda s: s[4])
+    return ops, spots
+
+
+def build(width, height, cycle=0):
+    """Porta do `build()` do componente: compoe as folhas e desenha-as."""
+    comp = composition(width, height, cycle)
+    seed = round(width) * 7919 + cycle * 104729
+    ops, spots = build_scene(comp, Rng(seed))
+    return (ops, spots), comp
+
+
+
