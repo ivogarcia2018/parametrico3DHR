@@ -429,7 +429,8 @@ export default function Home() {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [formValues, setFormValues] = useState<FormValues>({ name: "", email: "", profile: "arquitetura", message: "" });
   const [formErrors, setFormErrors] = useState<FormErrors>({});
-  const [formSubmitted, setFormSubmitted] = useState(false);
+  const [formOutcome, setFormOutcome] = useState<"sent" | "prepared" | null>(null);
+  const [formSending, setFormSending] = useState(false);
   const [expandedProgram, setExpandedProgram] = useState(0);
   // Rotação das imagens 3D na evidência do estágio IMAGEM (04).
   const [proofIndex, setProofIndex] = useState(0);
@@ -515,10 +516,23 @@ export default function Home() {
       else delete next[field];
       return next;
     });
-    setFormSubmitted(false);
+    setFormOutcome(null);
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  // Recuo: abre o cliente de email do visitante com o pedido já escrito. Usa-se
+  // quando o servidor não tem SMTP configurado, quando o envio falha e também em
+  // `pnpm dev`, onde só corre o Vite e não existe `/api/pedido`.
+  function openMailtoFallback(sendFailed: boolean) {
+    window.location.href = buildMailtoLink(formValues);
+    setFormOutcome("prepared");
+    toast.success("Pedido preparado.", {
+      description: sendFailed
+        ? `O envio directo falhou. Abrimos o teu email com o pedido endereçado a ${CONTACT_EMAIL} — confirma o envio.`
+        : `Abrimos o teu email com o pedido endereçado a ${CONTACT_EMAIL}. Confirma o envio.`,
+    });
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const nextErrors: FormErrors = {};
     (Object.keys(formValues) as FormField[]).forEach((field) => {
@@ -527,18 +541,40 @@ export default function Home() {
     });
     setFormErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) {
-      setFormSubmitted(false);
+      setFormOutcome(null);
       toast.error("Revê os campos assinalados.", { description: "Falta uma pequena correção antes de enviar." });
       return;
     }
-    // Sem backend de email: o pedido sai pelo cliente de email do visitante, já
-    // endereçado a formacao@3dhr.pt. A mensagem de estado diz isso mesmo, em vez
-    // de prometer um envio que não aconteceu no servidor.
-    window.location.href = buildMailtoLink(formValues);
-    toast.success("Pedido preparado.", {
-      description: `Abrimos o teu email com o pedido endereçado a ${CONTACT_EMAIL}. Confirma o envio.`,
-    });
-    setFormSubmitted(true);
+
+    // O pedido segue por POST para `server/index.ts`, que o envia por SMTP para
+    // formacao@3dhr.pt. Se a resposta não for JSON (Vite em `pnpm dev`, ou site
+    // servido como estático) o formulário recua para o `mailto:`.
+    setFormSending(true);
+    try {
+      const response = await fetch("/api/pedido", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formValues),
+      });
+      const isJson = (response.headers.get("content-type") ?? "").includes("application/json");
+      const payload: { ok?: boolean; reason?: string } | null = isJson
+        ? await response.json().catch(() => null)
+        : null;
+
+      if (response.ok && payload?.ok) {
+        setFormOutcome("sent");
+        toast.success("Pedido enviado.", {
+          description: `Recebemos o teu pedido. Respondemos para ${formValues.email} em 24h úteis.`,
+        });
+        return;
+      }
+
+      openMailtoFallback(payload?.reason === "send-failed");
+    } catch {
+      openMailtoFallback(true);
+    } finally {
+      setFormSending(false);
+    }
   }
 
   return (
@@ -1035,12 +1071,12 @@ export default function Home() {
                     <span className="contact-drag-grip" aria-hidden="true"><span /><span /><span /></span>
                   </button>
                 </div>
-                {formSubmitted && <div data-copy-transient className="form-success" role="status"><span className="grid h-8 w-8 place-items-center rounded-full bg-[#b6c9bb] text-[#171715]"><CircleCheck size={16} className="icon-pulse" /></span><span><strong>Pedido preparado.</strong><small>Confirma o envio para {CONTACT_EMAIL} — abrimos o teu email com tudo preenchido.</small></span></div>}
+                {formOutcome && <div data-copy-transient className="form-success" role="status"><span className="grid h-8 w-8 place-items-center rounded-full bg-[#b6c9bb] text-[#171715]"><CircleCheck size={16} className="icon-pulse" /></span><span>{formOutcome === "sent" ? <><strong>Pedido enviado.</strong><small>Recebemos o teu pedido — respondemos para o teu email em 24h úteis.</small></> : <><strong>Pedido preparado.</strong><small>Confirma o envio para {CONTACT_EMAIL} — abrimos o teu email com tudo preenchido.</small></>}</span></div>}
                 <form onSubmit={handleSubmit} className="mt-9 space-y-5" noValidate>
                   <div className="grid gap-5 sm:grid-cols-2"><div><input aria-label="Nome" name="name" value={formValues.name} onChange={(event) => handleFieldChange("name", event.target.value)} placeholder="o teu nome" className={`contact-input ${formErrors.name ? "contact-input-error" : formValues.name ? "contact-input-valid" : ""}`} />{formErrors.name && <p className="field-error">{formErrors.name}</p>}</div><div><input aria-label="Email" name="email" type="email" value={formValues.email} onChange={(event) => handleFieldChange("email", event.target.value)} placeholder="o-teu@email.com" className={`contact-input ${formErrors.email ? "contact-input-error" : formValues.email ? "contact-input-valid" : ""}`} />{formErrors.email && <p className="field-error">{formErrors.email}</p>}</div></div>
                   <div><select aria-label="Perfil" name="profile" value={formValues.profile} onChange={(event) => handleFieldChange("profile", event.target.value)} className={`contact-input ${formErrors.profile ? "contact-input-error" : "contact-input-valid"}`}><option value="">escolhe o teu perfil</option><option value="arquitetura">sou arquiteto/a</option><option value="estudante">sou estudante</option><option value="equipa">represento uma equipa</option><option value="outro">outro perfil</option></select>{formErrors.profile && <p className="field-error">{formErrors.profile}</p>}</div>
                   <div><textarea aria-label="Mensagem" name="message" rows={3} value={formValues.message} onChange={(event) => handleFieldChange("message", event.target.value)} placeholder="Tenho uma questão. (opcional)" className={`contact-input resize-none ${formErrors.message ? "contact-input-error" : formValues.message ? "contact-input-valid" : ""}`} />{formErrors.message && <p className="field-error">{formErrors.message}</p>}</div>
-                  <div className="flex flex-col gap-4 border-t border-[#171715]/20 pt-5 sm:flex-row sm:items-center sm:justify-between"><span className="flex items-center gap-2 font-mono text-[9px] uppercase tracking-[0.12em] text-[#171715]/55"><Check size={13} /> resposta em 24h úteis</span><button type="submit" className="submit-cta group">enviar pedido <Send size={15} className="transition-transform duration-200 group-hover:translate-x-1 group-hover:-translate-y-1" /></button></div>
+                  <div className="flex flex-col gap-4 border-t border-[#171715]/20 pt-5 sm:flex-row sm:items-center sm:justify-between"><span className="flex items-center gap-2 font-mono text-[9px] uppercase tracking-[0.12em] text-[#171715]/55"><Check size={13} /> resposta em 24h úteis</span><button type="submit" disabled={formSending} className="submit-cta group disabled:opacity-60 disabled:cursor-not-allowed">{formSending ? "a enviar…" : "enviar pedido"} <Send size={15} className="transition-transform duration-200 group-hover:translate-x-1 group-hover:-translate-y-1" /></button></div>
                 </form>
                 <p className="mt-4 font-mono text-[9px] uppercase tracking-[0.12em] text-[#171715]/55">ou envia directamente para{" "}<a href={`mailto:${CONTACT_EMAIL}`} className="text-[#171715] underline decoration-[#e96b3b] decoration-2 underline-offset-2 transition-colors hover:text-[#e96b3b]">{CONTACT_EMAIL}</a></p>
                 {(cardOffset.x !== 0 || cardOffset.y !== 0) && (

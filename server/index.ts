@@ -1,6 +1,7 @@
 import express from "express";
 import { existsSync } from "fs";
 import { createServer } from "http";
+import nodemailer from "nodemailer";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -25,6 +26,71 @@ function resolveStaticPath(): string {
   return candidates.find((candidate) => existsSync(path.join(candidate, "index.html"))) ?? candidates[0];
 }
 
+// ---------------------------------------------------------------------------
+// Pedido de informacao do formulario (POST /api/pedido)
+//
+// O site nao tem base de dados: o pedido e validado aqui e enviado por SMTP
+// para a caixa da formacao. As credenciais vivem em variaveis de ambiente
+// (SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS — ver .env.example) para nunca
+// entrarem no repositorio. Sem elas o endpoint responde 503 e o formulario
+// volta ao `mailto:` de recurso, por isso o pedido nunca se perde.
+// ---------------------------------------------------------------------------
+
+function contactEmail(): string {
+  return process.env.MAIL_TO?.trim() || "formacao@3dhr.pt";
+}
+
+// Texto legivel de cada opcao do seletor de perfil, igual ao do formulario.
+const PROFILE_LABELS: Record<string, string> = {
+  arquitetura: "sou arquiteto/a",
+  estudante: "sou estudante",
+  equipa: "represento uma equipa",
+  outro: "outro perfil",
+};
+
+type Pedido = { name: string; email: string; profile: string; message: string };
+
+// As mesmas regras do `validateField` do formulario: o servidor nao confia no
+// cliente, mas as mensagens sao iguais para o utilizador nao ver dois discursos.
+function readPedido(body: unknown): { pedido?: Pedido; errors: Record<string, string> } {
+  const source = (body ?? {}) as Record<string, unknown>;
+  const pedido: Pedido = {
+    name: String(source.name ?? "").trim(),
+    email: String(source.email ?? "").trim(),
+    profile: String(source.profile ?? "").trim(),
+    message: String(source.message ?? "").trim(),
+  };
+
+  const errors: Record<string, string> = {};
+  if (pedido.name.length < 2) errors.name = "Indica pelo menos 2 caracteres.";
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(pedido.email)) errors.email = "Escreve um email válido.";
+  if (!PROFILE_LABELS[pedido.profile]) errors.profile = "Escolhe uma opção.";
+  if (pedido.message.length > 0 && pedido.message.length < 8) errors.message = "Escreve pelo menos 8 caracteres ou deixa vazio.";
+
+  return Object.keys(errors).length > 0 ? { errors } : { pedido, errors };
+}
+
+// Devolve null quando falta configuracao — e o sinal para o cliente recuar
+// para o `mailto:` em vez de mostrar um erro.
+function createTransport() {
+  const host = process.env.SMTP_HOST?.trim();
+  const user = process.env.SMTP_USER?.trim();
+  const pass = process.env.SMTP_PASS;
+  if (!host || !user || !pass) return null;
+
+  const port = Number(process.env.SMTP_PORT ?? 587);
+  return {
+    user,
+    transport: nodemailer.createTransport({
+      host,
+      port,
+      // 465 e SSL directo; 587/25 sobem por STARTTLS.
+      secure: port === 465,
+      auth: { user, pass },
+    }),
+  };
+}
+
 async function startServer() {
   const app = express();
   const server = createServer(app);
@@ -37,6 +103,44 @@ async function startServer() {
   }
 
   console.log(`Serving client build from ${staticPath}`);
+
+  // Fica antes do catch-all do SPA, que responde a qualquer GET com o index.html.
+  app.post("/api/pedido", express.json({ limit: "32kb" }), async (req, res) => {
+    const { pedido, errors } = readPedido(req.body);
+    if (!pedido) {
+      res.status(400).json({ ok: false, errors });
+      return;
+    }
+
+    const smtp = createTransport();
+    if (!smtp) {
+      res.status(503).json({ ok: false, reason: "smtp-not-configured" });
+      return;
+    }
+
+    const fromName = process.env.MAIL_FROM_NAME?.trim() || "3DHR Formação";
+    const profile = PROFILE_LABELS[pedido.profile] ?? pedido.profile;
+
+    try {
+      await smtp.transport.sendMail({
+        from: `"${fromName}" <${smtp.user}>`,
+        to: contactEmail(),
+        replyTo: `"${pedido.name}" <${pedido.email}>`,
+        subject: `Inscrição / pedido de informação — ${pedido.name}`,
+        text: [
+          `Nome: ${pedido.name}`,
+          `Email: ${pedido.email}`,
+          `Perfil: ${profile}`,
+          `Mensagem: ${pedido.message || "—"}`,
+        ].join("\r\n"),
+      });
+      console.log(`[pedido] enviado para ${contactEmail()} (${pedido.email})`);
+      res.json({ ok: true });
+    } catch (error) {
+      console.error("[pedido] falha ao enviar por SMTP:", error);
+      res.status(502).json({ ok: false, reason: "send-failed" });
+    }
+  });
 
   app.use(express.static(staticPath));
 

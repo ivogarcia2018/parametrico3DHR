@@ -240,25 +240,50 @@ Notas práticas:
 ## Contacto e inscrições
 
 As inscrições e os pedidos de informação são endereçados a
-**`formacao@3dhr.pt`** (2026-10-06). Não há backend de email — o servidor
-(`server/index.ts`) é estático. Por isso o formulário da secção «inscrição»
-(`client/src/pages/Home.tsx`) valida os campos e, quando estão correctos, compõe
-um `mailto:` já preenchido com nome, email, perfil e mensagem, e abre o cliente
-de email do visitante com esse pedido pronto a enviar para `formacao@3dhr.pt`.
+**`formacao@3dhr.pt`** (2026-10-06). Desde 2026-10-15 o formulário envia-os
+**pelo servidor**, por SMTP — antes só abria o `mailto:` do visitante, o que
+falhava em silêncio em browsers sem cliente de email associado.
+
+O percurso é: o formulário da secção «inscrição»
+(`client/src/pages/Home.tsx`) valida os campos e faz `POST /api/pedido`; o
+endpoint em `server/index.ts` volta a validar, compõe o email (assunto
+«Inscrição / pedido de informação — nome», `Reply-To` do visitante) e envia-o
+por `nodemailer` para `formacao@3dhr.pt`, com as credenciais das `SMTP_*`.
+
+Há três recuos, para o pedido nunca se perder:
+
+1. **Sem `SMTP_*` configurado** — o endpoint responde `503` e o formulário abre
+   o `mailto:` do visitante, como antes.
+2. **O envio falhou** (`502`) — mesmo recuo, com um aviso diferente.
+3. **`pnpm dev`** — só corre o Vite e não existe `/api/pedido`; a resposta não é
+   JSON e o formulário recua para o `mailto:`.
 
 O endereço está também visível como link `mailto:` no cartão de contacto
 («ou envia directamente para…») e no rodapé, para quem preferir escrever sem
 passar pelo formulário.
 
-A constante `CONTACT_EMAIL` em `Home.tsx` é o ponto único onde o endereço vive:
-mudá-la propaga-o ao formulário (assunto e corpo), ao cartão de contacto e ao
-rodapé.
+A constante `CONTACT_EMAIL` em `Home.tsx` e a função `contactEmail()` em
+`server/index.ts` são os pontos onde o endereço vive (a segunda aceita
+`MAIL_TO`): mudá-los propaga-o ao formulário, ao cartão de contacto e ao rodapé.
 
 ## Variáveis de ambiente
 
-Opcionais — vê `.env.example`. Sem `.env` o site corre igual; o script de
-analytics só é injetado quando `VITE_ANALYTICS_ENDPOINT` e
-`VITE_ANALYTICS_WEBSITE_ID` estão definidos.
+Vê `.env.example`. O site arranca sem `.env`: o script de analytics só é
+injetado quando `VITE_ANALYTICS_ENDPOINT` e `VITE_ANALYTICS_WEBSITE_ID` estão
+definidos, e o formulário recua para o `mailto:` quando faltam as `SMTP_*`.
+
+Para o formulário enviar email (Hostinger Email):
+
+| Variável | Valor |
+| --- | --- |
+| `SMTP_HOST` | `smtp.hostinger.com` |
+| `SMTP_PORT` | `587` (STARTTLS) ou `465` (SSL) |
+| `SMTP_USER` | `formacao@3dhr.pt` |
+| `SMTP_PASS` | password da caixa — segredo, só no hPanel ou no `.env` local |
+| `MAIL_TO` | destino do pedido (opcional; por omissão `formacao@3dhr.pt`) |
+| `MAIL_FROM_NAME` | nome no «De:» (opcional; por omissão `3DHR Formação`) |
+
+O `.env` está no `.gitignore`: as credenciais nunca entram no repositório.
 
 ## Estrutura
 
@@ -360,7 +385,7 @@ do servidor em vez da página «Página não encontrada»).
 Em qualquer das opções, `dist/` está no `.gitignore`: o build corre na Hostinger,
 nunca é enviado do repositório.
 
-### Variável de ambiente obrigatória
+### Variáveis de ambiente no hPanel
 
 **`MANUS_RUNTIME=0`** — em *Environment variables* no hPanel, antes do primeiro
 build. A Hostinger injeta as variáveis **no build e no runtime**, por isso esta
@@ -370,6 +395,11 @@ Sem ela, o `vite-plugin-manus-runtime` inlina ~366 kB de runtime (com uma cópia
 própria do React) dentro do `index.html` — inútil fora do host do Manus. Com ela,
 o `index.html` sai com ~3,9 kB. O comportamento por omissão do código continua a
 ser «runtime ligado», para não partir um build dentro do Manus.
+
+Para o formulário enviar email, acrescenta **`SMTP_HOST`**, **`SMTP_PORT`**,
+**`SMTP_USER`** e **`SMTP_PASS`** (e, se quiseres, `MAIL_TO` /
+`MAIL_FROM_NAME`) — ver «Variáveis de ambiente». O servidor lê-as no arranque:
+depois de as guardares, faz **Redeploy**.
 
 As variáveis `VITE_ANALYTICS_*` são opcionais: sem elas o `index.html` fica com
 os marcadores `%VITE_...%` e o script de analytics não é injetado (o próprio
@@ -386,6 +416,8 @@ O `vite.config.ts` não define `base`, pelo que o site assume a raiz do domínio
 | --- | --- | --- |
 | Bloco vermelho do pnpm em PowerShell | aviso do campo `pnpm` deprecado | já resolvido — não voltar a acrescentar o campo ao `package.json` |
 | Build falha com `This project is configured to use 10.15.1 of pnpm` | o campo `packageManager` fixava uma versão diferente da do servidor | já resolvido — o campo foi removido; ver "Versões e configuração do pnpm" |
+| Formulário: «nada acontece» ao enviar | `mailto:` sem cliente de email associado no browser | configurar as `SMTP_*` — ver «Contacto e inscrições» |
+| Formulário: aparece «Pedido preparado» em vez de «Pedido enviado» | faltam as `SMTP_*` no hPanel, ou o envio falhou | procurar `[pedido] falha ao enviar por SMTP` no log e conferir as credenciais |
 | `Port 3000 is in use, trying another one...` → Vite em `http://localhost:3001` | já há um Vite a correr | usa o URL que o Vite imprime (3001) ou fecha o servidor antigo; a porta 3000 fica sem ninguém |
 | `ERR_CONNECTION_REFUSED` / `Failed to Load Page` em `localhost:3000` | nenhum servidor a correr (não há ficheiro estático a abrir) | `pnpm dev` e deixar o terminal aberto — ver "Como abrir o site" |
 | `ELIFECYCLE Command failed with exit code 4294967295` | o processo foi terminado (Ctrl+C ou outra ferramenta matou o node) | não é erro de código: volta a arrancar |
