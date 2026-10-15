@@ -9,6 +9,31 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 /**
+ * Carrega o `.env` da raiz, se existir.
+ *
+ * A Hostinger injecta as variaveis no processo, mas em algumas configuracoes
+ * deixa apenas um `.env` ao lado da app — e este servidor nao usa dotenv.
+ * `process.loadEnvFile` (Node 20.12+) cobre os dois casos e nao falha quando o
+ * ficheiro nao existe.
+ */
+function loadEnvFile(): void {
+  const candidates = [
+    path.resolve(process.cwd(), ".env"),
+    path.resolve(__dirname, "..", ".env"),
+    path.resolve(__dirname, ".env"),
+  ];
+  const found = candidates.find((candidate) => existsSync(candidate));
+  if (!found) return;
+
+  try {
+    process.loadEnvFile(found);
+    console.log(`Variaveis de ambiente carregadas de ${found}`);
+  } catch (error) {
+    console.warn(`Nao consegui carregar ${found}:`, error);
+  }
+}
+
+/**
  * Finds the folder that holds the built frontend, so `pnpm start` behaves the
  * same on Windows, macOS and Linux without relying on a NODE_ENV=production
  * prefix (which is not valid syntax in PowerShell or cmd.exe).
@@ -104,6 +129,8 @@ function formatAddresses(items: unknown[]): string {
 }
 
 async function startServer() {
+  loadEnvFile();
+
   const app = express();
   const server = createServer(app);
 

@@ -427,7 +427,9 @@ ser «runtime ligado», para não partir um build dentro do Manus.
 
 Para o formulário enviar email, acrescenta **`SMTP_HOST`**, **`SMTP_PORT`**,
 **`SMTP_USER`** e **`SMTP_PASS`** (e, se quiseres, `MAIL_TO` /
-`MAIL_FROM_NAME`) — ver «Variáveis de ambiente». O servidor lê-as no arranque:
+`MAIL_FROM_NAME`) — ver «Variáveis de ambiente». O servidor lê-as no arranque, do
+ambiente do processo **ou** de um `.env` na raiz (a Hostinger escreve esse
+ficheiro; o servidor carrega-o com `process.loadEnvFile`, porque não usa dotenv):
 depois de as guardares, faz **Redeploy**.
 
 As variáveis `VITE_ANALYTICS_*` são opcionais: sem elas o `index.html` fica com
