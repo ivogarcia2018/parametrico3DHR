@@ -301,6 +301,72 @@ Para confirmar que o patch continua ativo:
 Select-String node_modules\wouter\esm\index.js -Pattern __WOUTER_ROUTES__
 ```
 
+## Deploy na Hostinger (via GitHub)
+
+O repositório `github.com/ivogarcia2018/parametrico3DHR` está ligado ao
+**Node.js Hosting** da Hostinger (2026-10-14). O que a plataforma faz sozinha e o
+que tem de ser configurado:
+
+**Detetado automaticamente** — a Hostinger lê o `pnpm-lock.yaml` e usa **pnpm**,
+por isso o patch do wouter e o override do nanoid (que vivem no
+`pnpm-workspace.yaml`) continuam a aplicar-se. A versão do Node vem do campo
+`engines` do `package.json` (`>=22.12.0` → Node 22 LTS, o default da plataforma).
+
+### Opção A — Express (recomendada)
+
+Mantém o servidor `server/index.ts`, que serve o build e responde com o
+`index.html` a qualquer rota (o *fallback* de SPA que o `wouter` precisa).
+
+| Campo no hPanel | Valor |
+| --- | --- |
+| Node.js version | 22 |
+| Application type | `express` |
+| Root directory | *(vazio — a raiz)* |
+| Build script | `build` |
+| Output directory | *(vazio — o Express publica a raiz)* |
+| Entry file | `dist/index.js` |
+
+O `pnpm build` produz `dist/index.js` (servidor) e `dist/public/` (cliente), que
+é exactamente onde o `resolveStaticPath()` do servidor os procura.
+
+### Opção B — Vite estático
+
+Não corre nenhum processo Node: a Hostinger serve os ficheiros. Mais leve e mais
+rápido, mas perde-se o *fallback* de SPA (um endereço que não seja `/` dá o 404
+do servidor em vez da página «Página não encontrada»).
+
+| Campo no hPanel | Valor |
+| --- | --- |
+| Node.js version | 22 |
+| Application type | `vite` |
+| Root directory | *(vazio — a raiz)* |
+| Build script | `build` |
+| Output directory | `dist/public` |
+| Entry file | *(vazio — site estático)* |
+
+Em qualquer das opções, `dist/` está no `.gitignore`: o build corre na Hostinger,
+nunca é enviado do repositório.
+
+### Variável de ambiente obrigatória
+
+**`MANUS_RUNTIME=0`** — em *Environment variables* no hPanel, antes do primeiro
+build. A Hostinger injeta as variáveis **no build e no runtime**, por isso esta
+chega ao `vite.config.ts`.
+
+Sem ela, o `vite-plugin-manus-runtime` inlina ~366 kB de runtime (com uma cópia
+própria do React) dentro do `index.html` — inútil fora do host do Manus. Com ela,
+o `index.html` sai com ~3,9 kB. O comportamento por omissão do código continua a
+ser «runtime ligado», para não partir um build dentro do Manus.
+
+As variáveis `VITE_ANALYTICS_*` são opcionais: sem elas o `index.html` fica com
+os marcadores `%VITE_...%` e o script de analytics não é injetado (o próprio
+código deteta o `%` e desiste). O `.env` não vai para o repositório.
+
+### Se um dia mudar o domínio ou a pasta
+
+O `vite.config.ts` não define `base`, pelo que o site assume a raiz do domínio
+(`/`). Um deploy numa subpasta exigiria `base: "/nome-da-pasta/"`.
+
 ## Problemas comuns
 
 | Sintoma | Causa | Resolução |
